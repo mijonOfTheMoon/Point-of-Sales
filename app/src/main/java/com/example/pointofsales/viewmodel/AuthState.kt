@@ -9,6 +9,6 @@ sealed class AuthUiState {
 
 sealed class AuthCheckState {
     object Loading : AuthCheckState()
-    object Authenticated : AuthCheckState()
+    data class Authenticated(val role: String) : AuthCheckState()
     object Unauthenticated : AuthCheckState()
 }

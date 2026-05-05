@@ -16,24 +16,27 @@ fun AppNavigation() {
     val checkState by authViewModel.checkState.collectAsState()
 
     val backStack = rememberNavBackStack(
-        when (checkState) {
-            AuthCheckState.Authenticated -> Screen.Dashboard
+        when (val state = checkState) {
+            is AuthCheckState.Authenticated -> {
+                if (state.role == "cashier") Screen.Sales else Screen.Dashboard
+            }
             else -> Screen.Login
         }
     )
 
     // Handle authentication state changes to reset navigation
-    when (checkState) {
-        AuthCheckState.Authenticated -> {
+    when (val state = checkState) {
+        is AuthCheckState.Authenticated -> {
+            val targetScreen = if (state.role == "cashier") Screen.Sales else Screen.Dashboard
             if (backStack.isNotEmpty() && backStack.last() !is Screen.Dashboard && 
                 backStack.last() !is Screen.Products && backStack.last() !is Screen.Customers &&
                 backStack.last() !is Screen.Sales && backStack.last() !is Screen.Kas &&
                 backStack.last() !is Screen.Expenses) {
-                // Clear backstack and go to Dashboard
+                // Clear backstack and go to target
                 while (backStack.isNotEmpty()) {
-                    backStack.removeLast()
+                    backStack.removeAt(backStack.lastIndex)
                 }
-                backStack.add(Screen.Dashboard)
+                backStack.add(targetScreen)
             }
         }
         AuthCheckState.Unauthenticated -> {
@@ -43,7 +46,7 @@ fun AppNavigation() {
                 backStack.last() is Screen.Expenses)) {
                 // Clear backstack and go to Login
                 while (backStack.isNotEmpty()) {
-                    backStack.removeLast()
+                    backStack.removeAt(backStack.lastIndex)
                 }
                 backStack.add(Screen.Login)
             }
