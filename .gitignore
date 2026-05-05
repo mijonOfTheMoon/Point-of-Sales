@@ -13,3 +13,32 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio, IntelliJ
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.compiler.xml
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# Mac
+.DS_Store
+
+# Build folders
+build/
+app/build/
+kspCaches/
+outputs/
+tmp/
+/build
+
+# Keystore
+*.jks
+*.keystore
+
+# Google Services
+google-services.json
