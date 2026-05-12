@@ -16,11 +16,11 @@ data class CartItem(
     val quantity: Double
 )
 
-sealed class SalesUiState {
-    object Idle : SalesUiState()
-    object Loading : SalesUiState()
-    data class Success(val message: String) : SalesUiState()
-    data class Error(val message: String) : SalesUiState()
+sealed interface SalesUiState {
+    data object Idle : SalesUiState
+    data object Loading : SalesUiState
+    data class Success(val message: String) : SalesUiState
+    data class Error(val message: String) : SalesUiState
 }
 
 class SalesViewModel(
@@ -41,12 +41,12 @@ class SalesViewModel(
         loadProducts()
     }
 
-    private fun loadProducts() {
+    fun loadProducts() {
         viewModelScope.launch {
             try {
                 _products.value = productRepository.getProducts().filter { it.is_active }
             } catch (e: Exception) {
-                e.printStackTrace()
+                _uiState.value = SalesUiState.Error(e.message ?: "Failed to load products")
             }
         }
     }

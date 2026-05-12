@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class KasUiState {
-    object Loading : KasUiState()
-    data class Success(val kasList: List<Kas>) : KasUiState()
-    data class Error(val message: String) : KasUiState()
+sealed interface KasUiState {
+    data object Loading : KasUiState
+    data class Success(val kasList: List<Kas>) : KasUiState
+    data class Error(val message: String) : KasUiState
 }
 
 class KasViewModel(private val repository: KasRepository = KasRepository()) : ViewModel() {
@@ -41,9 +41,7 @@ class KasViewModel(private val repository: KasRepository = KasRepository()) : Vi
             try {
                 repository.manualAdjustment(kasId, amount, reason)
                 loadKas()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -56,9 +54,7 @@ class KasViewModel(private val repository: KasRepository = KasRepository()) : Vi
                     repository.activateKas(kas.id ?: "")
                 }
                 loadKas()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 }

@@ -20,7 +20,6 @@ fun AppNavigation() {
     val authViewModel: AuthViewModel = viewModel()
     val checkState by authViewModel.checkState.collectAsState()
 
-    // If still loading, display an empty screen or loading indicator to prevent flashing
     if (checkState is AuthCheckState.Loading) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -40,30 +39,23 @@ fun AppNavigation() {
         }
     )
 
-    // Handle authentication state changes to reset navigation
     when (val state = checkState) {
         is AuthCheckState.Authenticated -> {
             val targetScreen = if (state.role == "cashier") Screen.Sales else Screen.Dashboard
-            if (backStack.isNotEmpty() && backStack.last() !is Screen.Dashboard && 
+            if (backStack.isNotEmpty() && backStack.last() !is Screen.Dashboard &&
                 backStack.last() !is Screen.Products && backStack.last() !is Screen.Customers &&
                 backStack.last() !is Screen.Sales && backStack.last() !is Screen.Kas &&
                 backStack.last() !is Screen.Expenses) {
-                // Clear backstack and go to target
-                while (backStack.isNotEmpty()) {
-                    backStack.removeAt(backStack.lastIndex)
-                }
+                backStack.clear()
                 backStack.add(targetScreen)
             }
         }
         AuthCheckState.Unauthenticated -> {
-            if (backStack.isNotEmpty() && (backStack.last() is Screen.Dashboard || 
+            if (backStack.isNotEmpty() && (backStack.last() is Screen.Dashboard ||
                 backStack.last() is Screen.Products || backStack.last() is Screen.Customers ||
                 backStack.last() is Screen.Sales || backStack.last() is Screen.Kas ||
                 backStack.last() is Screen.Expenses)) {
-                // Clear backstack and go to Login
-                while (backStack.isNotEmpty()) {
-                    backStack.removeAt(backStack.lastIndex)
-                }
+                backStack.clear()
                 backStack.add(Screen.Login)
             }
         }
@@ -77,8 +69,7 @@ fun AppNavigation() {
             entry<Screen.Login> {
                 LoginScreen(
                     viewModel = authViewModel,
-                    onNavigateToRegister = { backStack.add(Screen.Register) },
-                    onLoginSuccess = { }
+                    onNavigateToRegister = { backStack.add(Screen.Register) }
                 )
             }
             entry<Screen.Register> {

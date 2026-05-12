@@ -62,12 +62,10 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
             try {
                 repository.signOut()
                 _checkState.value = AuthCheckState.Unauthenticated
-            } catch (e: Exception) {
-                // Handle logout error if necessary
-            }
+            } catch (_: Exception) {}
         }
     }
-    
+
     fun resetUiState() {
         _uiState.value = AuthUiState.Idle
     }

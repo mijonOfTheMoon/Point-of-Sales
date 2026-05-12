@@ -37,7 +37,7 @@ fun SalesScreen(
     val products by salesViewModel.products.collectAsState()
     val cart by salesViewModel.cart.collectAsState()
     val uiState by salesViewModel.uiState.collectAsState()
-    
+
     val customersState by customerViewModel.uiState.collectAsState()
     val kasState by kasViewModel.uiState.collectAsState()
 
@@ -49,12 +49,17 @@ fun SalesScreen(
     var showAddCustomerDialog by remember { mutableStateOf(false) }
     var newCustomerName by remember { mutableStateOf("") }
     var newCustomerPhone by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
 
     val formatter = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 } }
     val total = cart.sumOf { it.product.price * it.quantity }
 
+    val filteredProducts = remember(products, searchQuery) {
+        if (searchQuery.isBlank()) products
+        else products.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
     if (!isCheckoutMode.value) {
-        // --- 1. PRODUCT MENU MODE ---
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
@@ -105,11 +110,10 @@ fun SalesScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Search Bar Placeholder
                 item {
                     OutlinedTextField(
-                        value = "",
-                        onValueChange = { },
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
                         placeholder = { Text("Cari Menu") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
@@ -122,7 +126,7 @@ fun SalesScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                items(products) { product ->
+                items(filteredProducts) { product ->
                     val cartItem = cart.find { it.product.id == product.id }
                     val qty = cartItem?.quantity?.toInt() ?: 0
 
@@ -142,13 +146,12 @@ fun SalesScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            // Info Column
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(formatter.format(product.price), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.height(6.dp))
-                                
+
                                 val stockDisplay = if (product.stock % 1.0 == 0.0) product.stock.toInt().toString() else product.stock.toString()
                                 Surface(
                                     color = if (product.stock > 0) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
@@ -163,7 +166,6 @@ fun SalesScreen(
                                 }
                             }
 
-                            // Controls Row
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (qty > 0) {
                                     IconButton(
@@ -200,7 +202,6 @@ fun SalesScreen(
             }
         }
     } else {
-        // --- 2. CHECKOUT MODE ---
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
@@ -225,9 +226,8 @@ fun SalesScreen(
 
                         Button(
                             onClick = {
-                                // Simplified: if kas is selected auto-pay, else show simple validation toast (to be handled)
                                 selectedKas?.id?.let { kasId ->
-                                    salesViewModel.processSale(kasId, selectedCustomer?.id, total) // default auto paid full
+                                    salesViewModel.processSale(kasId, selectedCustomer?.id, total)
                                 }
                             },
                             modifier = Modifier
@@ -253,7 +253,6 @@ fun SalesScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Section Summary Cards
                 item {
                     Card(
                         shape = RoundedCornerShape(16.dp),
@@ -262,7 +261,6 @@ fun SalesScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            // Kas Selection Outline
                             Text("Kas Penerima", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.height(4.dp))
                             if (kasState is KasUiState.Success) {
@@ -285,7 +283,6 @@ fun SalesScreen(
 
                             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                            // Customer Selection
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -302,7 +299,6 @@ fun SalesScreen(
                                                 modifier = Modifier.padding(top = 2.dp),
                                                 color = MaterialTheme.colorScheme.primary
                                             )
-                                            // Make invisible button overlay for click
                                             Surface(modifier = Modifier.matchParentSize(), color = androidx.compose.ui.graphics.Color.Transparent, onClick = { expanded = true }) {}
 
                                             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -323,7 +319,6 @@ fun SalesScreen(
                     }
                 }
 
-                // Section Detail Menu
                 item {
                     Text("Menu Pesanan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
                 }
@@ -369,7 +364,7 @@ fun SalesScreen(
                         Text("Subtotal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(formatter.format(total), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Spacer(modifier = Modifier.height(100.dp)) // padding for bottom bar
+                    Spacer(modifier = Modifier.height(100.dp))
                 }
             }
         }
@@ -401,7 +396,7 @@ fun SalesScreen(
 
     if (showAddCustomerDialog) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = { showAddCustomerDialog = false },
             title = { Text("Pelanggan Baru", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -428,7 +423,7 @@ fun SalesScreen(
                             customerViewModel.registerCustomer(newCustomerName, newCustomerPhone)
                             newCustomerName = ""
                             newCustomerPhone = ""
-                            // Note: customerViewModel.loadCustomers() will run and selectedCustomer can be assigned later manually by the cashier.
+                            showAddCustomerDialog = false
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -438,7 +433,7 @@ fun SalesScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { }) {
+                TextButton(onClick = { showAddCustomerDialog = false }) {
                     Text("Batal")
                 }
             }
@@ -447,7 +442,7 @@ fun SalesScreen(
 
     if (uiState is SalesUiState.Success) {
         AlertDialog(
-            onDismissRequest = { }, // Force click button to clear
+            onDismissRequest = { },
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Success", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) },
             title = { Text("Transaksi Berhasil", textAlign = TextAlign.Center) },
             text = { Text("Pembayaran sebesar ${formatter.format(total)} telah diterima.", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
@@ -455,7 +450,7 @@ fun SalesScreen(
                 Button(
                     onClick = {
                         salesViewModel.resetUiState()
-                        salesViewModel.clearCart() // explicitly clearing cart just to be safe
+                        salesViewModel.clearCart()
                         selectedCustomer = null
                         isCheckoutMode.value = false
                     },

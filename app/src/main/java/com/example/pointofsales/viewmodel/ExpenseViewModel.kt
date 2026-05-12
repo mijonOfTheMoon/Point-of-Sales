@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class ExpenseUiState {
-    object Loading : ExpenseUiState()
-    data class Success(val expenses: List<Expense>) : ExpenseUiState()
-    data class Error(val message: String) : ExpenseUiState()
+sealed interface ExpenseUiState {
+    data object Loading : ExpenseUiState
+    data class Success(val expenses: List<Expense>) : ExpenseUiState
+    data class Error(val message: String) : ExpenseUiState
 }
 
 class ExpenseViewModel(private val repository: ExpenseRepository = ExpenseRepository()) : ViewModel() {
@@ -41,9 +41,7 @@ class ExpenseViewModel(private val repository: ExpenseRepository = ExpenseReposi
             try {
                 repository.createExpense(description, amount, kasId)
                 loadExpenses()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -52,9 +50,7 @@ class ExpenseViewModel(private val repository: ExpenseRepository = ExpenseReposi
             try {
                 repository.cancelExpense(id)
                 loadExpenses()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 }

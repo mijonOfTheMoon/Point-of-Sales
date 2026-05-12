@@ -54,7 +54,6 @@ class AuthRepository {
     }
 
     suspend fun isUserLoggedIn(): Boolean {
-        // Tunggu sampai status session selesai memuat (bukan LoadingFromStorage/Initializing)
         val status = auth.sessionStatus.first {
             it is SessionStatus.Authenticated || it is SessionStatus.NotAuthenticated
         }

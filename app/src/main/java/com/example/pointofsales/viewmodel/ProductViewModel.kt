@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class ProductUiState {
-    object Loading : ProductUiState()
-    data class Success(val products: List<Product>) : ProductUiState()
-    data class Error(val message: String) : ProductUiState()
+sealed interface ProductUiState {
+    data object Loading : ProductUiState
+    data class Success(val products: List<Product>) : ProductUiState
+    data class Error(val message: String) : ProductUiState
 }
 
 class ProductViewModel(private val repository: ProductRepository = ProductRepository()) : ViewModel() {
@@ -41,9 +41,7 @@ class ProductViewModel(private val repository: ProductRepository = ProductReposi
             try {
                 repository.addProduct(Product(name = name, price = price, stock = stock))
                 loadProducts()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -52,9 +50,7 @@ class ProductViewModel(private val repository: ProductRepository = ProductReposi
             try {
                 repository.updateProduct(product)
                 loadProducts()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -63,9 +59,7 @@ class ProductViewModel(private val repository: ProductRepository = ProductReposi
             try {
                 repository.deleteProduct(id)
                 loadProducts()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 }

@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class DashboardUiState {
-    object Loading : DashboardUiState()
-    data class Success(val summary: DashboardSummary) : DashboardUiState()
-    data class Error(val message: String) : DashboardUiState()
+sealed interface DashboardUiState {
+    data object Loading : DashboardUiState
+    data class Success(val summary: DashboardSummary) : DashboardUiState
+    data class Error(val message: String) : DashboardUiState
 }
 
 class DashboardViewModel(private val repository: DashboardRepository = DashboardRepository()) : ViewModel() {

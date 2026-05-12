@@ -17,8 +17,7 @@ import com.example.pointofsales.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
-    onNavigateToRegister: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -29,7 +28,6 @@ fun LoginScreen(
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) {
             hasSuccessfullyLoggedIn = true
-            onLoginSuccess()
             viewModel.resetUiState()
         }
     }
@@ -114,7 +112,7 @@ fun LoginScreen(
                     else -> "Login failed. Please try again."
                 }
                 Text(
-                    text = displayMsg, // Changed to show friendly error mapping
+                    text = displayMsg,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )

@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,6 +21,7 @@ import com.example.pointofsales.model.DashboardSummary
 import com.example.pointofsales.viewmodel.AuthViewModel
 import com.example.pointofsales.viewmodel.DashboardUiState
 import com.example.pointofsales.viewmodel.DashboardViewModel
+import java.text.NumberFormat
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,12 +113,15 @@ fun DashboardScreen(
 
 @Composable
 fun SummaryGrid(summary: DashboardSummary) {
+    val formatter = remember {
+        NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        SummaryCard("Total Sales", String.format(Locale.US, "$%.2f", summary.total_sales_value), Icons.AutoMirrored.Filled.TrendingUp, Modifier.weight(1f))
-        SummaryCard("Expenses", String.format(Locale.US, "$%.2f", summary.total_expenses), Icons.AutoMirrored.Filled.TrendingDown, Modifier.weight(1f))
+        SummaryCard("Total Sales", formatter.format(summary.total_sales_value), Icons.AutoMirrored.Filled.TrendingUp, Modifier.weight(1f))
+        SummaryCard("Expenses", formatter.format(summary.total_expenses), Icons.AutoMirrored.Filled.TrendingDown, Modifier.weight(1f))
     }
     Spacer(modifier = Modifier.height(8.dp))
     Row(
@@ -124,7 +129,7 @@ fun SummaryGrid(summary: DashboardSummary) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         SummaryCard("Transactions", summary.total_transactions.toString(), Icons.Default.Receipt, Modifier.weight(1f))
-        SummaryCard("Cash in Kas", String.format(Locale.US, "$%.2f", summary.total_cash_active), Icons.Default.Money, Modifier.weight(1f))
+        SummaryCard("Cash in Kas", formatter.format(summary.total_cash_active), Icons.Default.Money, Modifier.weight(1f))
     }
 }
 

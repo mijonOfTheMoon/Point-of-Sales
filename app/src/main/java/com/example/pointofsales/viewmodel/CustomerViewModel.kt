@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class CustomerUiState {
-    object Loading : CustomerUiState()
-    data class Success(val customers: List<Customer>) : CustomerUiState()
-    data class Error(val message: String) : CustomerUiState()
+sealed interface CustomerUiState {
+    data object Loading : CustomerUiState
+    data class Success(val customers: List<Customer>) : CustomerUiState
+    data class Error(val message: String) : CustomerUiState
 }
 
 class CustomerViewModel(private val repository: CustomerRepository = CustomerRepository()) : ViewModel() {
@@ -41,9 +41,7 @@ class CustomerViewModel(private val repository: CustomerRepository = CustomerRep
             try {
                 repository.registerCustomer(name, phone)
                 loadCustomers()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -52,9 +50,7 @@ class CustomerViewModel(private val repository: CustomerRepository = CustomerRep
             try {
                 repository.updateCustomer(id, name, phone)
                 loadCustomers()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -67,9 +63,7 @@ class CustomerViewModel(private val repository: CustomerRepository = CustomerRep
                     repository.activateCustomer(customer.id ?: "")
                 }
                 loadCustomers()
-            } catch (e: Exception) {
-                // Handle error
-            }
+            } catch (_: Exception) {}
         }
     }
 }
