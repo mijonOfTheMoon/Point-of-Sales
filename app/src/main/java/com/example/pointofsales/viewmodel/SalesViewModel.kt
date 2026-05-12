@@ -84,7 +84,6 @@ class SalesViewModel(
                 }
                 salesRepository.processSale(kasId, customerId, items, paid)
                 _uiState.value = SalesUiState.Success("Sale processed successfully!")
-                clearCart()
             } catch (e: Exception) {
                 _uiState.value = SalesUiState.Error(e.message ?: "Failed to process sale")
             }

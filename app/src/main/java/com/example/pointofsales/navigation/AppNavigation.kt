@@ -81,7 +81,7 @@ fun AppNavigation() {
                     onNavigateToSales = { backStack.add(Screen.Sales) },
                     onNavigateToKas = { backStack.add(Screen.Kas) },
                     onNavigateToExpenses = { backStack.add(Screen.Expenses) },
-                    onLogout = { }
+                    onLogout = { authViewModel.signOut() }
                 )
             }
             entry<Screen.Products> {
@@ -102,11 +102,13 @@ fun AppNavigation() {
                 val salesViewModel: SalesViewModel = viewModel()
                 val customerViewModel: CustomerViewModel = viewModel()
                 val kasViewModel: KasViewModel = viewModel()
+                val isCashier = (checkState as? AuthCheckState.Authenticated)?.role == "cashier"
                 SalesScreen(
                     salesViewModel = salesViewModel,
                     customerViewModel = customerViewModel,
                     kasViewModel = kasViewModel,
-                    onBack = { backStack.removeLastOrNull() }
+                    onBack = if (isCashier) null else { { backStack.removeLastOrNull() } },
+                    onLogout = if (isCashier) { { authViewModel.signOut() } } else null
                 )
             }
             entry<Screen.Kas> {
