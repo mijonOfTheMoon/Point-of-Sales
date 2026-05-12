@@ -3,6 +3,7 @@ package com.example.pointofsales.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -17,6 +18,7 @@ import java.time.ZonedDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import com.example.pointofsales.model.TransactionWithItems
 import com.example.pointofsales.viewmodel.SalesViewModel
 import com.example.pointofsales.viewmodel.KasViewModel
 import com.example.pointofsales.viewmodel.KasUiState
@@ -32,7 +34,7 @@ fun TransactionHistoryScreen(
     val kasState by kasViewModel.uiState.collectAsState()
 
     val formatter = remember {
-        NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 }
+        NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
     }
 
     LaunchedEffect(kasState) {
@@ -86,49 +88,113 @@ fun TransactionHistoryScreen(
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp),
                 contentPadding = PaddingValues(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item { Spacer(modifier = Modifier.height(8.dp)) }
+                item { Spacer(modifier = Modifier.height(4.dp)) }
                 items(transactions) { transaction ->
-                    Card(
+                    TransactionCard(transaction = transaction, formatter = formatter)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionCard(
+    transaction: TransactionWithItems,
+    formatter: NumberFormat
+) {
+    val dateTime = remember(transaction.sold_at) {
+        try {
+            ZonedDateTime.parse(transaction.sold_at)
+                .withZoneSameInstant(ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT))
+        } catch (_: Exception) {
+            transaction.sold_at
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = dateTime,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = transaction.status.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                transaction.transaction_item.forEach { item ->
+                    val qty = if (item.quantity % 1.0 == 0.0) item.quantity.toInt().toString()
+                              else item.quantity.toString()
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                val dateTime = try {
-                                    ZonedDateTime.parse(transaction.sold_at).withZoneSameInstant(ZoneId.systemDefault())
-                                        .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))
-                                } catch (_: Exception) {
-                                    transaction.sold_at
-                                }
-                                Text(dateTime, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Surface(
-                                    color = if (transaction.status == "completed") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = transaction.status.uppercase(),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            transaction.transaction_item.forEach { item ->
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("${item.quantity.toInt()}x ${item.product_name}", style = MaterialTheme.typography.bodyMedium)
-                                    Text(formatter.format(item.subtotal), style = MaterialTheme.typography.bodyMedium)
-                                }
-                            }
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Total", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                Text(formatter.format(transaction.total), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            }
-                        }
+                        Text(
+                            text = "${qty}x ${item.product_name}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = formatter.format(item.subtotal),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Total",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = formatter.format(transaction.total),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
