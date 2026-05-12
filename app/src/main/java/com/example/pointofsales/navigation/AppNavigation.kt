@@ -45,7 +45,7 @@ fun AppNavigation() {
             if (backStack.isNotEmpty() && backStack.last() !is Screen.Dashboard &&
                 backStack.last() !is Screen.Products && backStack.last() !is Screen.Customers &&
                 backStack.last() !is Screen.Sales && backStack.last() !is Screen.Kas &&
-                backStack.last() !is Screen.Expenses) {
+                backStack.last() !is Screen.Expenses && backStack.last() !is Screen.TransactionHistory) {
                 backStack.clear()
                 backStack.add(targetScreen)
             }
@@ -54,7 +54,7 @@ fun AppNavigation() {
             if (backStack.isNotEmpty() && (backStack.last() is Screen.Dashboard ||
                 backStack.last() is Screen.Products || backStack.last() is Screen.Customers ||
                 backStack.last() is Screen.Sales || backStack.last() is Screen.Kas ||
-                backStack.last() is Screen.Expenses)) {
+                backStack.last() is Screen.Expenses || backStack.last() is Screen.TransactionHistory)) {
                 backStack.clear()
                 backStack.add(Screen.Login)
             }
@@ -136,7 +136,11 @@ fun AppNavigation() {
                 )
             }
             entry<Screen.TransactionHistory> {
+                val salesViewModel: SalesViewModel = viewModel()
+                val kasViewModel: KasViewModel = viewModel()
                 TransactionHistoryScreen(
+                    salesViewModel = salesViewModel,
+                    kasViewModel = kasViewModel,
                     onBack = { backStack.removeLastOrNull() }
                 )
             }

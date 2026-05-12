@@ -6,6 +6,7 @@ import com.example.pointofsales.data.ProductRepository
 import com.example.pointofsales.data.SalesRepository
 import com.example.pointofsales.model.Product
 import com.example.pointofsales.model.TransactionItemInput
+import com.example.pointofsales.model.TransactionWithItems
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +38,9 @@ class SalesViewModel(
     private val _products = MutableStateFlow<List<Product>>(emptyList())
     val products: StateFlow<List<Product>> = _products.asStateFlow()
 
+    private val _transactions = MutableStateFlow<List<TransactionWithItems>>(emptyList())
+    val transactions: StateFlow<List<TransactionWithItems>> = _transactions.asStateFlow()
+
     init {
         loadProducts()
     }
@@ -47,6 +51,16 @@ class SalesViewModel(
                 _products.value = productRepository.getProducts().filter { it.is_active }
             } catch (e: Exception) {
                 _uiState.value = SalesUiState.Error(e.message ?: "Failed to load products")
+            }
+        }
+    }
+
+    fun loadTransactions(kasId: String) {
+        viewModelScope.launch {
+            try {
+                _transactions.value = salesRepository.getTransactions(kasId)
+            } catch (e: Exception) {
+                _uiState.value = SalesUiState.Error(e.message ?: "Failed to load transactions")
             }
         }
     }
@@ -85,6 +99,7 @@ class SalesViewModel(
                 salesRepository.processSale(kasId, customerId, items, paid)
                 _uiState.value = SalesUiState.Success("Sale processed successfully!")
                 loadProducts()
+                loadTransactions(kasId)
             } catch (e: Exception) {
                 _uiState.value = SalesUiState.Error(e.message ?: "Failed to process sale")
             }
