@@ -3,17 +3,25 @@ package com.example.pointofsales.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import java.text.NumberFormat
+import java.util.Locale
 import com.example.pointofsales.model.Customer
 import com.example.pointofsales.model.Kas
-import com.example.pointofsales.model.Product
 import com.example.pointofsales.viewmodel.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,155 +41,344 @@ fun SalesScreen(
 
     var selectedCustomer by remember { mutableStateOf<Customer?>(null) }
     var selectedKas by remember { mutableStateOf<Kas?>(null) }
-    var paidAmount by remember { mutableStateOf("") }
-    var showCheckoutDialog by remember { mutableStateOf(false) }
 
+    val isCheckoutMode = remember { mutableStateOf(false) }
+
+    val formatter = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 } }
     val total = cart.sumOf { it.product.price * it.quantity }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("New Sale") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
+    if (!isCheckoutMode.value) {
+        // --- 1. PRODUCT MENU MODE ---
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text("Menu Kasir", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                if (cart.isNotEmpty()) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 16.dp
+                    ) {
+                        Button(
+                            onClick = { isCheckoutMode.value = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Text("Proses Pesanan →", style = MaterialTheme.typography.titleMedium)
+                                Text(formatter.format(total), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
-            )
-        }
-    ) { innerPadding ->
-        Row(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            // Product List
-            Column(modifier = Modifier.weight(1f).padding(8.dp)) {
-                Text("Products", style = MaterialTheme.typography.titleLarge)
-                LazyColumn {
-                    items(products) { product ->
-                        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(product.name)
-                                    Text("$${product.price}", style = MaterialTheme.typography.bodySmall)
+            }
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Search Bar Placeholder
+                item {
+                    OutlinedTextField(
+                        value = "",
+                        onValueChange = { },
+                        placeholder = { Text("Cari Menu") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                items(products) { product ->
+                    val cartItem = cart.find { it.product.id == product.id }
+                    val qty = cartItem?.quantity?.toInt() ?: 0
+
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (qty > 0) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                             else MaterialTheme.colorScheme.surface,
+                        ),
+                        border = if (qty > 0) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            // Info Column
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(formatter.format(product.price), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                            // Controls Row
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (qty > 0) {
+                                    IconButton(
+                                        onClick = {
+                                            if (qty > 1) salesViewModel.addToCart(product, -1.0)
+                                            else salesViewModel.removeFromCart(product.id ?: "")
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                    }
+
+                                    Text(
+                                        text = qty.toString(),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.padding(horizontal = 12.dp)
+                                    )
                                 }
-                                IconButton(onClick = { salesViewModel.addToCart(product) }) {
-                                    Icon(Icons.Default.Add, contentDescription = "Add")
+
+                                IconButton(
+                                    onClick = { salesViewModel.addToCart(product, 1.0) },
+                                    modifier = Modifier.size(36.dp),
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = "Increase")
                                 }
                             }
                         }
                     }
                 }
             }
-            
-            // Cart
-            Column(modifier = Modifier.weight(0.6f).padding(8.dp).fillMaxHeight()) {
-                Text("Cart", style = MaterialTheme.typography.titleLarge)
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(cart) { item ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Text("${item.product.name} x${item.quantity}", modifier = Modifier.weight(1f))
-                            Text("$${item.product.price * item.quantity}")
+        }
+    } else {
+        // --- 2. CHECKOUT MODE ---
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { Text("Pesanan Checkout", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = { isCheckoutMode.value = false }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            },
+            bottomBar = {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 16.dp
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Total Pembayaran", style = MaterialTheme.typography.titleMedium)
+                            Text(formatter.format(total), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                // Simplified: if kas is selected auto-pay, else show simple validation toast (to be handled)
+                                selectedKas?.id?.let { kasId ->
+                                    salesViewModel.processSale(kasId, selectedCustomer?.id, total) // default auto paid full
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            enabled = cart.isNotEmpty() && selectedKas != null && uiState !is SalesUiState.Loading
+                        ) {
+                            if (uiState is SalesUiState.Loading) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Text("Proses Pembayaran →", style = MaterialTheme.typography.titleMedium)
+                            }
                         }
                     }
                 }
-                Divider()
-                Text("Total: $${total}", style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = { showCheckoutDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = cart.isNotEmpty()
-                ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Checkout")
+            }
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Section Summary Cards
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            // Kas Selection Outline
+                            Text("Kas Penerima", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            if (kasState is KasUiState.Success) {
+                                val kasList = (kasState as KasUiState.Success).kasList.filter { it.is_active }
+                                var expanded by remember { mutableStateOf(false) }
+                                Box {
+                                    TextButton(
+                                        onClick = { expanded = true },
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Text(selectedKas?.name ?: "Pilih Kas", style = MaterialTheme.typography.titleMedium)
+                                    }
+                                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                        kasList.forEach { kas ->
+                                            DropdownMenuItem(text = { Text(kas.name) }, onClick = { selectedKas = kas; expanded = false })
+                                        }
+                                    }
+                                }
+                            }
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+                            // Customer Selection
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text("Nama Customer", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (customersState is CustomerUiState.Success) {
+                                        val customerList = (customersState as CustomerUiState.Success).customers.filter { it.is_active }
+                                        var expanded by remember { mutableStateOf(false) }
+                                        Box {
+                                            Text(
+                                                text = selectedCustomer?.name ?: "Pilih (Opsional)",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier.padding(top = 2.dp),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            // Make invisible button overlay for click
+                                            Surface(modifier = Modifier.matchParentSize(), color = androidx.compose.ui.graphics.Color.Transparent, onClick = { expanded = true }) {}
+
+                                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                                DropdownMenuItem(text = { Text("Kosongkan") }, onClick = { selectedCustomer = null; expanded = false })
+                                                customerList.forEach { customer ->
+                                                    DropdownMenuItem(text = { Text(customer.name) }, onClick = { selectedCustomer = customer; expanded = false })
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Section Detail Menu
+                item {
+                    Text("Menu Pesanan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                }
+
+                items(cart) { item ->
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.product.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(formatter.format(item.product.price), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = {
+                                    if (item.quantity > 1) salesViewModel.addToCart(item.product, -1.0)
+                                    else salesViewModel.removeFromCart(item.product.id ?: "")
+                                }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                }
+                                Text(item.quantity.toInt().toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 8.dp))
+                                IconButton(onClick = { salesViewModel.addToCart(item.product, 1.0) }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Add, contentDescription = "Increase")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Detail Pembayaran", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Subtotal", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(formatter.format(total), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(modifier = Modifier.height(100.dp)) // padding for bottom bar
                 }
             }
         }
     }
 
-    if (showCheckoutDialog) {
+    if (uiState is SalesUiState.Success) {
         AlertDialog(
-            onDismissRequest = { showCheckoutDialog = false },
-            title = { Text("Checkout") },
-            text = {
-                Column {
-                    Text("Total: $${total}")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Kas Selection
-                    Text("Select Kas", style = MaterialTheme.typography.labelMedium)
-                    if (kasState is KasUiState.Success) {
-                        val kasList = (kasState as KasUiState.Success).kasList.filter { it.is_active }
-                        var expanded by remember { mutableStateOf(false) }
-                        Box {
-                            TextButton(onClick = { expanded = true }) {
-                                Text(selectedKas?.name ?: "Select Kas")
-                            }
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                kasList.forEach { kas ->
-                                    DropdownMenuItem(
-                                        text = { Text(kas.name) },
-                                        onClick = {
-                                            selectedKas = kas
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Customer Selection (Optional)
-                    Text("Select Customer (Optional)", style = MaterialTheme.typography.labelMedium)
-                    if (customersState is CustomerUiState.Success) {
-                        val customerList = (customersState as CustomerUiState.Success).customers.filter { it.is_active }
-                        var expanded by remember { mutableStateOf(false) }
-                        Box {
-                            TextButton(onClick = { expanded = true }) {
-                                Text(selectedCustomer?.name ?: "No Customer")
-                            }
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                DropdownMenuItem(text = { Text("No Customer") }, onClick = { selectedCustomer = null; expanded = false })
-                                customerList.forEach { customer ->
-                                    DropdownMenuItem(
-                                        text = { Text(customer.name) },
-                                        onClick = {
-                                            selectedCustomer = customer
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = paidAmount,
-                        onValueChange = { paidAmount = it },
-                        label = { Text("Amount Paid") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
+            onDismissRequest = { }, // Force click button to clear
+            icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Success", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) },
+            title = { Text("Transaksi Berhasil", textAlign = TextAlign.Center) },
+            text = { Text("Pembayaran sebesar ${formatter.format(total)} telah diterima.", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
             confirmButton = {
                 Button(
                     onClick = {
-                        selectedKas?.id?.let { kasId ->
-                            salesViewModel.processSale(kasId, selectedCustomer?.id, paidAmount.toDoubleOrNull() ?: total)
-                            showCheckoutDialog = false
-                        }
+                        salesViewModel.resetUiState()
+                        salesViewModel.clearCart() // explicitly clearing cart just to be safe
+                        selectedCustomer = null
+                        isCheckoutMode.value = false
                     },
-                    enabled = selectedKas != null
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Pay")
+                    Text("Kembali ke Kasir")
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCheckoutDialog = false }) { Text("Cancel") }
             }
         )
     }
 
-    LaunchedEffect(uiState) {
-        if (uiState is SalesUiState.Success) {
-            // Optional toast or snackbar
-        }
+    if (uiState is SalesUiState.Error) {
+        AlertDialog(
+            onDismissRequest = { salesViewModel.resetUiState() },
+            title = { Text("Terjadi Kesalahan") },
+            text = { Text("Silakan coba lagi nanti.") },
+            confirmButton = {
+                Button(
+                    onClick = { salesViewModel.resetUiState() },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Tutup")
+                }
+            }
+        )
     }
 }
