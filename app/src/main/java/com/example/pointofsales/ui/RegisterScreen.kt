@@ -9,6 +9,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.pointofsales.viewmodel.AuthUiState
 import com.example.pointofsales.viewmodel.AuthViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun RegisterScreen(
@@ -19,6 +20,14 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState) {
+        if (uiState is AuthUiState.Success) {
+            delay(1500)
+            viewModel.resetUiState()
+            onNavigateToLogin()
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
