@@ -15,9 +15,15 @@ data class Transaction(
 )
 
 @Serializable
+data class TransactionCustomer(
+    val name: String
+)
+
+@Serializable
 data class TransactionWithItems(
     val id: String,
     val customer_id: String? = null,
+    val customer: TransactionCustomer? = null,
     val kas_id: String,
     val sold_at: String,
     val total: Double,

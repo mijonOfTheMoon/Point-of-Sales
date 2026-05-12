@@ -16,7 +16,7 @@ class SalesRepository {
     private val postgrest = SupabaseClientProvider.client.postgrest
 
     suspend fun getTransactions(kasId: String): List<TransactionWithItems> = withContext(Dispatchers.IO) {
-        postgrest["transaction"].select(columns = Columns.raw("*, transaction_item(*)")) {
+        postgrest["transaction"].select(columns = Columns.raw("*, transaction_item(*), customer(name)")) {
             filter {
                 eq("kas_id", kasId)
             }
