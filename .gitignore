@@ -50,3 +50,7 @@ google-services.json
 /supabase/.temp/rest-version
 /supabase/.temp/storage-migration
 /supabase/.temp/storage-version
+
+.agent/
+.kotlin/
+input_images/
