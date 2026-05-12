@@ -176,6 +176,8 @@ fun SalesScreen(
                                 }
                             }
 
+                            Spacer(modifier = Modifier.width(16.dp))
+
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (qty > 0) {
                                     IconButton(
@@ -191,7 +193,7 @@ fun SalesScreen(
                                     Text(
                                         text = qty.toString(),
                                         style = MaterialTheme.typography.titleMedium,
-                                        modifier = Modifier.padding(horizontal = 12.dp)
+                                        modifier = Modifier.padding(horizontal = 16.dp)
                                     )
                                 }
 
@@ -350,6 +352,7 @@ fun SalesScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(formatter.format(item.product.price), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                            Spacer(modifier = Modifier.width(16.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = {
                                     if (item.quantity > 1) salesViewModel.addToCart(item.product, -1.0)
@@ -357,7 +360,7 @@ fun SalesScreen(
                                 }, modifier = Modifier.size(32.dp)) {
                                     Icon(Icons.Default.Remove, contentDescription = "Decrease")
                                 }
-                                Text(item.quantity.toInt().toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 8.dp))
+                                Text(item.quantity.toInt().toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
                                 IconButton(onClick = { salesViewModel.addToCart(item.product, 1.0) }, modifier = Modifier.size(32.dp)) {
                                     Icon(Icons.Default.Add, contentDescription = "Increase")
                                 }
