@@ -6,6 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.unit.dp
 import com.example.pointofsales.viewmodel.AuthUiState
 import com.example.pointofsales.viewmodel.AuthViewModel
@@ -19,13 +23,16 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var hasSuccessfullyRegistered by remember { mutableStateOf(false) }
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.Success) {
+            hasSuccessfullyRegistered = true
             delay(1500)
-            viewModel.resetUiState()
             onNavigateToLogin()
+            viewModel.resetUiState()
         }
     }
 
@@ -75,7 +82,14 @@ fun RegisterScreen(
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val description = if (passwordVisible) "Hide password" else "Show password"
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = description)
+                    }
+                },
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -83,12 +97,12 @@ fun RegisterScreen(
             Button(
                 onClick = { viewModel.signUp(name, email, password) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState !is AuthUiState.Loading && uiState !is AuthUiState.Success && name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+                enabled = uiState !is AuthUiState.Loading && uiState !is AuthUiState.Success && !hasSuccessfullyRegistered && name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         strokeWidth = 2.dp
                     )
                 } else {
@@ -108,14 +122,6 @@ fun RegisterScreen(
                     Text(
                         text = (uiState as AuthUiState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                is AuthUiState.Success -> {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = (uiState as AuthUiState.Success).message,
-                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
