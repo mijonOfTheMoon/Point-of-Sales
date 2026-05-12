@@ -6,15 +6,20 @@ import io.github.jan.supabase.postgrest.postgrest
 import com.example.pointofsales.model.UserProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class AuthRepository {
     private val client = SupabaseClientProvider.client
     private val auth = client.auth
 
-    suspend fun signUp(email: String, password: String) = withContext(Dispatchers.IO) {
+    suspend fun signUp(name: String, email: String, password: String) = withContext(Dispatchers.IO) {
         auth.signUpWith(Email) {
             this.email = email
             this.password = password
+            this.data = buildJsonObject {
+                put("name", name)
+            }
         }
     }
 

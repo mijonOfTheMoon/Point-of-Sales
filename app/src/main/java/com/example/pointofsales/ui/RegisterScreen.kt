@@ -17,6 +17,7 @@ fun RegisterScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
@@ -43,6 +44,15 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Full Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
@@ -62,9 +72,9 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.signUp(email, password) },
+                onClick = { viewModel.signUp(name, email, password) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState !is AuthUiState.Loading
+                enabled = uiState !is AuthUiState.Loading && name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(

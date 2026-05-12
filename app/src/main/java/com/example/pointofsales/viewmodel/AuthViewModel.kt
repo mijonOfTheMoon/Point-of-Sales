@@ -31,11 +31,11 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
         }
     }
 
-    fun signUp(email: String, password: String) {
+    fun signUp(name: String, email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                repository.signUp(email, password)
+                repository.signUp(name, email, password)
                 _uiState.value = AuthUiState.Success("Registration successful! Please check your email.")
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Registration failed")
