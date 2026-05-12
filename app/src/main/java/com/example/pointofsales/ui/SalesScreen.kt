@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
@@ -30,7 +31,8 @@ fun SalesScreen(
     salesViewModel: SalesViewModel,
     customerViewModel: CustomerViewModel,
     kasViewModel: KasViewModel,
-    onBack: () -> Unit
+    onBack: (() -> Unit)? = null,
+    onLogout: (() -> Unit)? = null
 ) {
     val products by salesViewModel.products.collectAsState()
     val cart by salesViewModel.cart.collectAsState()
@@ -43,6 +45,7 @@ fun SalesScreen(
     var selectedKas by remember { mutableStateOf<Kas?>(null) }
 
     val isCheckoutMode = remember { mutableStateOf(false) }
+    val showLogoutDialog = remember { mutableStateOf(false) }
 
     val formatter = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 } }
     val total = cart.sumOf { it.product.price * it.quantity }
@@ -54,8 +57,17 @@ fun SalesScreen(
                 CenterAlignedTopAppBar(
                     title = { Text("Menu Kasir", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        }
+                    },
+                    actions = {
+                        if (onLogout != null) {
+                            IconButton(onClick = { showLogoutDialog.value = true }) {
+                                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = MaterialTheme.colorScheme.error)
+                            }
                         }
                     }
                 )
@@ -340,6 +352,30 @@ fun SalesScreen(
                 }
             }
         }
+    }
+
+    if (showLogoutDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog.value = false },
+            title = { Text("Konfirmasi Logout") },
+            text = { Text("Apakah Anda yakin ingin keluar dari Kasir?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog.value = false
+                        onLogout?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Keluar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog.value = false }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 
     if (uiState is SalesUiState.Success) {
