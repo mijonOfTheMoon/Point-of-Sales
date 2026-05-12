@@ -19,6 +19,7 @@ val PoppinsFont = GoogleFont("Poppins")
 
 val PoppinsFontFamily = FontFamily(
     Font(googleFont = PoppinsFont, fontProvider = provider, weight = FontWeight.SemiBold),
+    Font(googleFont = PoppinsFont, fontProvider = provider, weight = FontWeight.Medium),
     Font(googleFont = PoppinsFont, fontProvider = provider, weight = FontWeight.Normal)
 )
 
@@ -26,14 +27,14 @@ val PoppinsFontFamily = FontFamily(
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = PoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = PoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp
@@ -54,21 +55,21 @@ val Typography = Typography(
     ),
     titleMedium = TextStyle(
         fontFamily = PoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.15.sp
     ),
     titleSmall = TextStyle(
         fontFamily = PoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
     labelLarge = TextStyle(
         fontFamily = PoppinsFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp

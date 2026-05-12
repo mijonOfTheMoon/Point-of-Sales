@@ -3,8 +3,10 @@ package com.example.pointofsales.data
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.auth.status.SessionStatus
 import com.example.pointofsales.model.UserProfile
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -45,15 +47,17 @@ class AuthRepository {
                         }
                     }.decodeSingle<UserProfile>()
                 profile.role
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 "cashier"
             }
         }
     }
 
-    fun getCurrentSession() = auth.currentSessionOrNull()
-
-    fun isUserLoggedIn(): Boolean {
-        return auth.currentSessionOrNull() != null
+    suspend fun isUserLoggedIn(): Boolean {
+        // Tunggu sampai status session selesai memuat (bukan LoadingFromStorage/Initializing)
+        val status = auth.sessionStatus.first {
+            it is SessionStatus.Authenticated || it is SessionStatus.NotAuthenticated
+        }
+        return status is SessionStatus.Authenticated
     }
 }

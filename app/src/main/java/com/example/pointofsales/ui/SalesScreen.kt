@@ -46,6 +46,9 @@ fun SalesScreen(
 
     val isCheckoutMode = remember { mutableStateOf(false) }
     val showLogoutDialog = remember { mutableStateOf(false) }
+    var showAddCustomerDialog by remember { mutableStateOf(false) }
+    var newCustomerName by remember { mutableStateOf("") }
+    var newCustomerPhone by remember { mutableStateOf("") }
 
     val formatter = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 } }
     val total = cart.sumOf { it.product.price * it.quantity }
@@ -141,9 +144,23 @@ fun SalesScreen(
                         ) {
                             // Info Column
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(formatter.format(product.price), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                
+                                val stockDisplay = if (product.stock % 1.0 == 0.0) product.stock.toInt().toString() else product.stock.toString()
+                                Surface(
+                                    color = if (product.stock > 0) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = if (product.stock > 0) "Sisa Stok: $stockDisplay" else "Stok Habis",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (product.stock > 0) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
                             }
 
                             // Controls Row
@@ -290,6 +307,10 @@ fun SalesScreen(
 
                                             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                                                 DropdownMenuItem(text = { Text("Kosongkan") }, onClick = { selectedCustomer = null; expanded = false })
+                                                DropdownMenuItem(
+                                                    text = { Text("Tambah Pelanggan Baru...", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold) },
+                                                    onClick = { showAddCustomerDialog = true; expanded = false }
+                                                )
                                                 customerList.forEach { customer ->
                                                     DropdownMenuItem(text = { Text(customer.name) }, onClick = { selectedCustomer = customer; expanded = false })
                                                 }
@@ -372,6 +393,52 @@ fun SalesScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog.value = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    if (showAddCustomerDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Pelanggan Baru", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newCustomerName,
+                        onValueChange = { newCustomerName = it },
+                        label = { Text("Nama Pelanggan") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = newCustomerPhone,
+                        onValueChange = { newCustomerPhone = it },
+                        label = { Text("Nomor Telepon (Optional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newCustomerName.isNotBlank()) {
+                            customerViewModel.registerCustomer(newCustomerName, newCustomerPhone)
+                            newCustomerName = ""
+                            newCustomerPhone = ""
+                            // Note: customerViewModel.loadCustomers() will run and selectedCustomer can be assigned later manually by the cashier.
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Simpan", style = MaterialTheme.typography.labelLarge)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { }) {
                     Text("Batal")
                 }
             }

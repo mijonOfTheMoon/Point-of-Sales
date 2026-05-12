@@ -1,8 +1,13 @@
 package com.example.pointofsales.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -14,6 +19,17 @@ import com.example.pointofsales.viewmodel.*
 fun AppNavigation() {
     val authViewModel: AuthViewModel = viewModel()
     val checkState by authViewModel.checkState.collectAsState()
+
+    // If still loading, display an empty screen or loading indicator to prevent flashing
+    if (checkState is AuthCheckState.Loading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     val backStack = rememberNavBackStack(
         when (val state = checkState) {
