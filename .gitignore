@@ -15,7 +15,6 @@
 local.properties
 
 # Android Studio, IntelliJ
-*.iml
 .idea/
 .idea/workspace.xml
 .idea/tasks.xml
@@ -26,16 +25,12 @@ local.properties
 .idea/navEditor.xml
 .idea/assetWizardSettings.xml
 
-# Mac
-.DS_Store
-
 # Build folders
 build/
 app/build/
 kspCaches/
 outputs/
 tmp/
-/build
 
 # Keystore
 *.jks
@@ -43,3 +38,6 @@ tmp/
 
 # Google Services
 google-services.json
+
+# Supabase
+.supabase/

@@ -3,15 +3,15 @@ package com.example.pointofsales.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Vibrant POS Color Scheme
-val PrimaryLight = Color(0xFF3F51B5)
+val PrimaryLight = Color(0xFF002D5C)
 val OnPrimaryLight = Color(0xFFFFFFFF)
-val PrimaryContainerLight = Color(0xFFDEE0FF)
-val OnPrimaryContainerLight = Color(0xFF001158)
+val PrimaryContainerLight = Color(0xFFEAF4FF)
+val OnPrimaryContainerLight = Color(0xFF001B3B)
 
-val SecondaryLight = Color(0xFFFF9800)
-val OnSecondaryLight = Color(0xFFFFFFFF)
-val SecondaryContainerLight = Color(0xFFFFDDB3)
-val OnSecondaryContainerLight = Color(0xFF291800)
+val SecondaryLight = Color(0xFFEAF4FF)
+val OnSecondaryLight = Color(0xFF002D5C)
+val SecondaryContainerLight = Color(0xFFFFFFFF)
+val OnSecondaryContainerLight = Color(0xFF002D5C)
 
 val TertiaryLight = Color(0xFF009688)
 val OnTertiaryLight = Color(0xFFFFFFFF)
@@ -23,21 +23,21 @@ val OnErrorLight = Color(0xFFFFFFFF)
 val ErrorContainerLight = Color(0xFFFFDAD6)
 val OnErrorContainerLight = Color(0xFF410002)
 
-val BackgroundLight = Color(0xFFFEFBFF)
+val BackgroundLight = Color(0xFFFFFFFF)
 val OnBackgroundLight = Color(0xFF1B1B1F)
-val SurfaceLight = Color(0xFFFEFBFF)
+val SurfaceLight = Color(0xFFFFFFFF)
 val OnSurfaceLight = Color(0xFF1B1B1F)
 
 // Dark Theme
-val PrimaryDark = Color(0xFFBAC3FF)
-val OnPrimaryDark = Color(0xFF002187)
-val PrimaryContainerDark = Color(0xFF22369C)
-val OnPrimaryContainerDark = Color(0xFFDEE0FF)
+val PrimaryDark = Color(0xFFEAF4FF)
+val OnPrimaryDark = Color(0xFF002D5C)
+val PrimaryContainerDark = Color(0xFF001B3B)
+val OnPrimaryContainerDark = Color(0xFFEAF4FF)
 
-val SecondaryDark = Color(0xFFFFB951)
-val OnSecondaryDark = Color(0xFF452B00)
-val SecondaryContainerDark = Color(0xFF633F00)
-val OnSecondaryContainerDark = Color(0xFFFFDDB3)
+val SecondaryDark = Color(0xFF002D5C)
+val OnSecondaryDark = Color(0xFFEAF4FF)
+val SecondaryContainerDark = Color(0xFF001B3B)
+val OnSecondaryContainerDark = Color(0xFFEAF4FF)
 
 val TertiaryDark = Color(0xFF50DBCB)
 val OnTertiaryDark = Color(0xFF003731)
