@@ -9,6 +9,6 @@ class DashboardRepository {
     private val postgrest = SupabaseClientProvider.client.postgrest
 
     suspend fun getDashboardSummary(): DashboardSummary = withContext(Dispatchers.IO) {
-        postgrest.rpc("get_dashboard_summary").decodeSingle<DashboardSummary>()
+        postgrest.rpc("get_dashboard_summary").decodeAs<DashboardSummary>()
     }
 }
