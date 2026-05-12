@@ -27,4 +27,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object Expenses : Screen
+
+    @Serializable
+    data object TransactionHistory : Screen
 }

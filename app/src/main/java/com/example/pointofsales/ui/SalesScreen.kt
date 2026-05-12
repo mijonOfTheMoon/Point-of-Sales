@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Remove
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
 import java.util.Locale
@@ -32,7 +34,8 @@ fun SalesScreen(
     customerViewModel: CustomerViewModel,
     kasViewModel: KasViewModel,
     onBack: (() -> Unit)? = null,
-    onLogout: (() -> Unit)? = null
+    onLogout: (() -> Unit)? = null,
+    onNavigateToHistory: () -> Unit = {}
 ) {
     val products by salesViewModel.products.collectAsState()
     val cart by salesViewModel.cart.collectAsState()
@@ -65,17 +68,24 @@ fun SalesScreen(
                 CenterAlignedTopAppBar(
                     title = { Text("Menu Kasir", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        if (onBack != null) {
+                        if (onLogout != null) {
+                            IconButton(onClick = { showLogoutDialog.value = true }) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ExitToApp,
+                                    contentDescription = "Logout",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.scale(scaleX = -1f, scaleY = 1f)
+                                )
+                            }
+                        } else if (onBack != null) {
                             IconButton(onClick = onBack) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         }
                     },
                     actions = {
-                        if (onLogout != null) {
-                            IconButton(onClick = { showLogoutDialog.value = true }) {
-                                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout", tint = MaterialTheme.colorScheme.error)
-                            }
+                        IconButton(onClick = onNavigateToHistory) {
+                            Icon(Icons.Default.History, contentDescription = "Transaction History")
                         }
                     }
                 )

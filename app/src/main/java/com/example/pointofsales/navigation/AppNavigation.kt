@@ -115,7 +115,8 @@ fun AppNavigation() {
                     customerViewModel = customerViewModel,
                     kasViewModel = kasViewModel,
                     onBack = if (isCashier) null else { { backStack.removeLastOrNull() } },
-                    onLogout = if (isCashier) { { authViewModel.signOut() } } else null
+                    onLogout = if (isCashier) { { authViewModel.signOut() } } else null,
+                    onNavigateToHistory = { backStack.add(Screen.TransactionHistory) }
                 )
             }
             entry<Screen.Kas> {
@@ -131,6 +132,11 @@ fun AppNavigation() {
                 ExpenseScreen(
                     expenseViewModel = expenseViewModel,
                     kasViewModel = kasViewModel,
+                    onBack = { backStack.removeLastOrNull() }
+                )
+            }
+            entry<Screen.TransactionHistory> {
+                TransactionHistoryScreen(
                     onBack = { backStack.removeLastOrNull() }
                 )
             }
