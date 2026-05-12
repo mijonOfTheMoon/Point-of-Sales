@@ -83,7 +83,7 @@ fun RegisterScreen(
             Button(
                 onClick = { viewModel.signUp(name, email, password) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState !is AuthUiState.Loading && name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
+                enabled = uiState !is AuthUiState.Loading && uiState !is AuthUiState.Success && name.isNotBlank() && email.isNotBlank() && password.isNotBlank()
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(
