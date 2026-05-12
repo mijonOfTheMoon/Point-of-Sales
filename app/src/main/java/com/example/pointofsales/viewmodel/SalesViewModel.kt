@@ -46,7 +46,7 @@ class SalesViewModel(
             try {
                 _products.value = productRepository.getProducts().filter { it.is_active }
             } catch (e: Exception) {
-                // Handle error
+                e.printStackTrace()
             }
         }
     }
@@ -89,5 +89,9 @@ class SalesViewModel(
                 _uiState.value = SalesUiState.Error(e.message ?: "Failed to process sale")
             }
         }
+    }
+
+    fun resetUiState() {
+        _uiState.value = SalesUiState.Idle
     }
 }
