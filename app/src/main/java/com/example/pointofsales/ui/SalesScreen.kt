@@ -176,7 +176,7 @@ fun SalesScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(24.dp))
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (qty > 0) {
@@ -352,7 +352,7 @@ fun SalesScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(formatter.format(item.product.price), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(24.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = {
                                     if (item.quantity > 1) salesViewModel.addToCart(item.product, -1.0)

@@ -44,13 +44,13 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Welcome Back",
+                text = "Selamat Datang",
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Login to your POS account",
+                text = "Masuk ke akun POS Anda",
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(32.dp))
@@ -67,12 +67,12 @@ fun LoginScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text("Kata Sandi") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    val description = if (passwordVisible) "Hide password" else "Show password"
+                    val description = if (passwordVisible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(imageVector = image, contentDescription = description)
                     }
@@ -93,23 +93,23 @@ fun LoginScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Login")
+                    Text("Masuk")
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(onClick = onNavigateToRegister) {
-                Text("Don't have an account? Register")
+                Text("Belum punya akun? Daftar")
             }
 
             if (uiState is AuthUiState.Error) {
                 Spacer(modifier = Modifier.height(16.dp))
                 val rawMsg = (uiState as AuthUiState.Error).message.lowercase()
                 val displayMsg = when {
-                    rawMsg.contains("invalid login") -> "Invalid email or password."
-                    rawMsg.contains("network") || rawMsg.contains("fetch") || rawMsg.contains("host") -> "Network error. Please check your internet connection."
-                    else -> "Login failed. Please try again."
+                    rawMsg.contains("invalid login") -> "Email atau kata sandi salah."
+                    rawMsg.contains("network") || rawMsg.contains("fetch") || rawMsg.contains("host") -> "Kesalahan jaringan. Periksa koneksi internet Anda."
+                    else -> "Gagal masuk. Silakan coba lagi."
                 }
                 Text(
                     text = displayMsg,
