@@ -49,9 +49,6 @@ fun SalesScreen(
 
     val isCheckoutMode = remember { mutableStateOf(false) }
     val showLogoutDialog = remember { mutableStateOf(false) }
-    var showAddCustomerDialog by remember { mutableStateOf(false) }
-    var newCustomerName by remember { mutableStateOf("") }
-    var newCustomerPhone by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
 
     val formatter = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 } }
@@ -305,7 +302,7 @@ fun SalesScreen(
                                         var expanded by remember { mutableStateOf(false) }
                                         Box {
                                             Text(
-                                                text = selectedCustomer?.name ?: "Pilih (Opsional)",
+                                                text = selectedCustomer?.name ?: "Pilih",
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.Medium,
                                                 modifier = Modifier.padding(top = 2.dp),
@@ -315,10 +312,6 @@ fun SalesScreen(
 
                                             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                                                 DropdownMenuItem(text = { Text("Kosongkan") }, onClick = { selectedCustomer = null; expanded = false })
-                                                DropdownMenuItem(
-                                                    text = { Text("Tambah Pelanggan Baru...", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold) },
-                                                    onClick = { showAddCustomerDialog = true; expanded = false }
-                                                )
                                                 customerList.forEach { customer ->
                                                     DropdownMenuItem(text = { Text(customer.name) }, onClick = { selectedCustomer = customer; expanded = false })
                                                 }
@@ -407,51 +400,7 @@ fun SalesScreen(
         )
     }
 
-    if (showAddCustomerDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddCustomerDialog = false },
-            title = { Text("Pelanggan Baru", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = newCustomerName,
-                        onValueChange = { newCustomerName = it },
-                        label = { Text("Nama Pelanggan") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = newCustomerPhone,
-                        onValueChange = { newCustomerPhone = it },
-                        label = { Text("Nomor Telepon (Optional)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newCustomerName.isNotBlank()) {
-                            customerViewModel.registerCustomer(newCustomerName, newCustomerPhone)
-                            newCustomerName = ""
-                            newCustomerPhone = ""
-                            showAddCustomerDialog = false
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Simpan", style = MaterialTheme.typography.labelLarge)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddCustomerDialog = false }) {
-                    Text("Batal")
-                }
-            }
-        )
-    }
+
 
     if (uiState is SalesUiState.Success) {
         AlertDialog(
