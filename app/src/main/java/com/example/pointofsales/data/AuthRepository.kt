@@ -53,6 +53,10 @@ class AuthRepository {
         }
     }
 
+    fun getUserEmail(): String {
+        return auth.currentSessionOrNull()?.user?.email ?: ""
+    }
+
     suspend fun isUserLoggedIn(): Boolean {
         val status = auth.sessionStatus.first {
             it is SessionStatus.Authenticated || it is SessionStatus.NotAuthenticated

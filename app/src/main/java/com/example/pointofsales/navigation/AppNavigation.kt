@@ -42,7 +42,8 @@ fun AppNavigation() {
             if (backStack.isNotEmpty() && backStack.last() !is Screen.Dashboard &&
                 backStack.last() !is Screen.Products && backStack.last() !is Screen.Customers &&
                 backStack.last() !is Screen.Sales && backStack.last() !is Screen.Kas &&
-                backStack.last() !is Screen.Expenses && backStack.last() !is Screen.TransactionHistory) {
+                backStack.last() !is Screen.Expenses && backStack.last() !is Screen.TransactionHistory &&
+                backStack.last() !is Screen.Profile) {
                 backStack.clear()
                 backStack.add(Screen.Dashboard)
             }
@@ -51,7 +52,8 @@ fun AppNavigation() {
             if (backStack.isNotEmpty() && (backStack.last() is Screen.Dashboard ||
                 backStack.last() is Screen.Products || backStack.last() is Screen.Customers ||
                 backStack.last() is Screen.Sales || backStack.last() is Screen.Kas ||
-                backStack.last() is Screen.Expenses || backStack.last() is Screen.TransactionHistory)) {
+                backStack.last() is Screen.Expenses || backStack.last() is Screen.TransactionHistory ||
+                backStack.last() is Screen.Profile)) {
                 backStack.clear()
                 backStack.add(Screen.Login)
             }
@@ -91,6 +93,7 @@ fun AppNavigation() {
                     onNavigateToSales = { backStack.add(Screen.Sales) },
                     onNavigateToKas = { backStack.add(Screen.Kas) },
                     onNavigateToExpenses = { backStack.add(Screen.Expenses) },
+                    onNavigateToProfile = { backStack.add(Screen.Profile) },
                     onLogout = { authViewModel.signOut() }
                 )
             }
@@ -143,6 +146,13 @@ fun AppNavigation() {
                     salesViewModel = salesViewModel,
                     kasViewModel = kasViewModel,
                     onBack = { backStack.removeLastOrNull() }
+                )
+            }
+            entry<Screen.Profile> {
+                ProfileScreen(
+                    authViewModel = authViewModel,
+                    onBack = { backStack.removeLastOrNull() },
+                    onLogout = { backStack.clear(); backStack.add(Screen.Login) }
                 )
             }
         }

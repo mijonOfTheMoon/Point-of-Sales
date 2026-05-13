@@ -30,4 +30,7 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object TransactionHistory : Screen
+
+    @Serializable
+    data object Profile : Screen
 }

@@ -7,6 +7,7 @@ val PrimaryLight = Color(0xFF002D5C)
 val OnPrimaryLight = Color(0xFFFFFFFF)
 val PrimaryContainerLight = Color(0xFFEAF4FF)
 val OnPrimaryContainerLight = Color(0xFF001B3B)
+val InversePrimaryLight = Color(0xFF027FFF)  // Alternative / accent blue
 
 val SecondaryLight = Color(0xFFEAF4FF)
 val OnSecondaryLight = Color(0xFF002D5C)
@@ -33,6 +34,7 @@ val PrimaryDark = Color(0xFFEAF4FF)
 val OnPrimaryDark = Color(0xFF002D5C)
 val PrimaryContainerDark = Color(0xFF001B3B)
 val OnPrimaryContainerDark = Color(0xFFEAF4FF)
+val InversePrimaryDark = Color(0xFF027FFF)
 
 val SecondaryDark = Color(0xFF002D5C)
 val OnSecondaryDark = Color(0xFFEAF4FF)

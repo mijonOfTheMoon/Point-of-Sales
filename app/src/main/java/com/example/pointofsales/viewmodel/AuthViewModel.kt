@@ -24,7 +24,8 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
         viewModelScope.launch {
             if (repository.isUserLoggedIn()) {
                 val role = repository.getUserRole()
-                _checkState.value = AuthCheckState.Authenticated(role)
+                val email = repository.getUserEmail()
+                _checkState.value = AuthCheckState.Authenticated(role, email)
             } else {
                 _checkState.value = AuthCheckState.Unauthenticated
             }
@@ -50,7 +51,8 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
                 repository.signIn(email, password)
                 _uiState.value = AuthUiState.Success("Login successful!")
                 val role = repository.getUserRole()
-                _checkState.value = AuthCheckState.Authenticated(role)
+                val email = repository.getUserEmail()
+                _checkState.value = AuthCheckState.Authenticated(role, email)
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Login failed")
             }
