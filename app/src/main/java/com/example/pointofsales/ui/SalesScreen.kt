@@ -33,8 +33,7 @@ fun SalesScreen(
     salesViewModel: SalesViewModel,
     customerViewModel: CustomerViewModel,
     kasViewModel: KasViewModel,
-    onBack: (() -> Unit)? = null,
-    onLogout: (() -> Unit)? = null,
+    onBack: () -> Unit,
     onNavigateToHistory: () -> Unit = {}
 ) {
     val products by salesViewModel.products.collectAsState()
@@ -48,7 +47,6 @@ fun SalesScreen(
     var selectedKas by remember { mutableStateOf<Kas?>(null) }
 
     val isCheckoutMode = remember { mutableStateOf(false) }
-    val showLogoutDialog = remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
     val formatter = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 } }
@@ -65,19 +63,8 @@ fun SalesScreen(
                 CenterAlignedTopAppBar(
                     title = { Text("Menu Kasir", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        if (onLogout != null) {
-                            IconButton(onClick = { showLogoutDialog.value = true }) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ExitToApp,
-                                    contentDescription = "Logout",
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.scale(scaleX = -1f, scaleY = 1f)
-                                )
-                            }
-                        } else if (onBack != null) {
-                            IconButton(onClick = onBack) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                            }
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     actions = {
@@ -376,29 +363,7 @@ fun SalesScreen(
         }
     }
 
-    if (showLogoutDialog.value) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog.value = false },
-            title = { Text("Konfirmasi Logout") },
-            text = { Text("Apakah Anda yakin ingin keluar dari Kasir?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showLogoutDialog.value = false
-                        onLogout?.invoke()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Keluar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog.value = false }) {
-                    Text("Batal")
-                }
-            }
-        )
-    }
+
 
 
 
