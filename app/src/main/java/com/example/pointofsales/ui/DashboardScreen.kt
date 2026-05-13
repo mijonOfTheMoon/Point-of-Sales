@@ -153,17 +153,8 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(cs.primaryContainer)
-                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 24.dp)
             ) {
-                Text(
-                    text = "MAIN MENU",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = cs.onSurface.copy(alpha = 0.45f),
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
                 val menuItems = buildList {
                     if (role in salesRoles) {
                         add(MenuDef("Sales", "Manage transactions", Icons.Default.ShoppingCart, cs.secondary, cs.primary, onNavigateToSales))
