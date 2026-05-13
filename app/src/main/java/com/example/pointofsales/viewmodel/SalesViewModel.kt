@@ -66,12 +66,20 @@ class SalesViewModel(
     }
 
     fun addToCart(product: Product, quantity: Double = 1.0) {
+        val productId = product.id ?: return
+        if (quantity == 0.0) return
+
         val currentCart = _cart.value.toMutableList()
-        val existingItemIndex = currentCart.indexOfFirst { it.product.id == product.id }
+        val existingItemIndex = currentCart.indexOfFirst { it.product.id == productId }
         if (existingItemIndex != -1) {
             val existingItem = currentCart[existingItemIndex]
-            currentCart[existingItemIndex] = existingItem.copy(quantity = existingItem.quantity + quantity)
-        } else {
+            val updatedQuantity = existingItem.quantity + quantity
+            if (updatedQuantity > 0.0) {
+                currentCart[existingItemIndex] = existingItem.copy(quantity = updatedQuantity)
+            } else {
+                currentCart.removeAt(existingItemIndex)
+            }
+        } else if (quantity > 0.0) {
             currentCart.add(CartItem(product, quantity))
         }
         _cart.value = currentCart
@@ -86,12 +94,23 @@ class SalesViewModel(
     }
 
     fun processSale(kasId: String, customerId: String?, paid: Double) {
+        if (kasId.isBlank()) {
+            _uiState.value = SalesUiState.Error("Kas id is missing")
+            return
+        }
+        if (_cart.value.isEmpty()) {
+            _uiState.value = SalesUiState.Error("Cart is empty")
+            return
+        }
+
         viewModelScope.launch {
             _uiState.value = SalesUiState.Loading
             try {
                 val items = _cart.value.map {
+                    val productId = it.product.id
+                        ?: throw IllegalStateException("Cart contains a product without an id")
                     TransactionItemInput(
-                        product_id = it.product.id ?: "",
+                        product_id = productId,
                         quantity = it.quantity,
                         price_at_sale = it.product.price
                     )

@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,11 +19,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pointofsales.model.Kas
 import com.example.pointofsales.viewmodel.KasUiState
 import com.example.pointofsales.viewmodel.KasViewModel
 import java.text.NumberFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,10 +31,10 @@ fun KasScreen(
     viewModel: KasViewModel,
     onBack: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAdjustSheet by remember { mutableStateOf<Kas?>(null) }
     val cs = MaterialTheme.colorScheme
-    val fmt = remember { NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 } }
+    val fmt = remember { rupiahFormatter() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -175,13 +176,13 @@ fun KasAdjustSheet(
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = cs.surface, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text("Adjust — ${kas.name}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
+            Text("Adjust - ${kas.name}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
             Spacer(modifier = Modifier.height(4.dp))
             Text("Use a negative value to deduct balance.", style = MaterialTheme.typography.bodySmall, color = cs.onSurface.copy(alpha = 0.45f))
             Spacer(modifier = Modifier.height(20.dp))
             OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount") }, leadingIcon = { Icon(Icons.Default.AttachMoney, null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(value = reason, onValueChange = { reason = it }, label = { Text("Reason") }, leadingIcon = { Icon(Icons.Default.Notes, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            OutlinedTextField(value = reason, onValueChange = { reason = it }, label = { Text("Reason") }, leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = { onConfirm(amount.toDoubleOrNull() ?: 0.0, reason) }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp)) {
                 Text("Confirm Adjustment", style = MaterialTheme.typography.titleSmall)

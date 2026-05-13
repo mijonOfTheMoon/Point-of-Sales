@@ -17,11 +17,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pointofsales.model.Product
 import com.example.pointofsales.viewmodel.ProductUiState
 import com.example.pointofsales.viewmodel.ProductViewModel
 import java.text.NumberFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,11 +29,11 @@ fun ProductScreen(
     viewModel: ProductViewModel,
     onBack: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     var productToEdit by remember { mutableStateOf<Product?>(null) }
     val cs = MaterialTheme.colorScheme
-    val fmt = remember { NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 } }
+    val fmt = remember { rupiahFormatter() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

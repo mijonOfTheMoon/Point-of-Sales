@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pointofsales.viewmodel.AuthCheckState
 import com.example.pointofsales.viewmodel.AuthUiState
 import com.example.pointofsales.viewmodel.AuthViewModel
@@ -32,8 +33,8 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val authState by authViewModel.checkState.collectAsState()
-    val uiState   by authViewModel.uiState.collectAsState()
+    val authState by authViewModel.checkState.collectAsStateWithLifecycle()
+    val uiState   by authViewModel.uiState.collectAsStateWithLifecycle()
 
     val authenticated = authState as? AuthCheckState.Authenticated
     val role  = authenticated?.role  ?: ""
@@ -175,7 +176,7 @@ fun ProfileScreen(
                     iconBg   = cs.primaryContainer,
                     iconTint = cs.primary,
                     label    = "Display Name",
-                    value    = if (name.isNotBlank()) name else "—"
+                    value    = if (name.isNotBlank()) name else "-"
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))

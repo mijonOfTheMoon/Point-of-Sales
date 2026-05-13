@@ -12,6 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.NumberFormat
+import java.util.Locale
 import kotlin.math.abs
 
 @Composable
@@ -46,3 +48,14 @@ fun abbreviateNumber(value: Double): String {
 
 fun abbreviateNumber(value: Long): String = abbreviateNumber(value.toDouble())
 fun abbreviateNumber(value: Int): String = abbreviateNumber(value.toDouble())
+
+fun rupiahFormatter(): NumberFormat {
+    return NumberFormat.getCurrencyInstance(
+        Locale.Builder()
+            .setLanguage("id")
+            .setRegion("ID")
+            .build()
+    ).apply {
+        maximumFractionDigits = 0
+    }
+}

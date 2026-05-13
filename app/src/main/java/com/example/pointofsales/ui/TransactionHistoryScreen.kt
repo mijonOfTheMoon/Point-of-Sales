@@ -13,8 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.text.NumberFormat
-import java.util.Locale
 import java.time.ZonedDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -31,11 +31,11 @@ fun TransactionHistoryScreen(
     kasViewModel: KasViewModel,
     onBack: () -> Unit
 ) {
-    val transactions by salesViewModel.transactions.collectAsState()
-    val kasState by kasViewModel.uiState.collectAsState()
+    val transactions by salesViewModel.transactions.collectAsStateWithLifecycle()
+    val kasState by kasViewModel.uiState.collectAsStateWithLifecycle()
 
     val formatter = remember {
-        NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
+        rupiahFormatter()
     }
 
     LaunchedEffect(kasState) {

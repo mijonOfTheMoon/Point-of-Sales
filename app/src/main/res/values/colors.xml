@@ -2,5 +2,4 @@
 <resources>
     <color name="brand_primary">#002D5C</color>
     <color name="brand_background">#FFFFFF</color>
-    <color name="brand_background_dark">#060F18</color>
 </resources>

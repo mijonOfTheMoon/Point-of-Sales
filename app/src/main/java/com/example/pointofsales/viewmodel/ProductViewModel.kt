@@ -41,25 +41,39 @@ class ProductViewModel(private val repository: ProductRepository = ProductReposi
             try {
                 repository.addProduct(Product(name = name, price = price, stock = stock))
                 loadProducts()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = ProductUiState.Error(e.message ?: "Failed to add product")
+            }
         }
     }
 
     fun updateProduct(product: Product) {
+        if (product.id.isNullOrBlank()) {
+            _uiState.value = ProductUiState.Error("Product id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 repository.updateProduct(product)
                 loadProducts()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = ProductUiState.Error(e.message ?: "Failed to update product")
+            }
         }
     }
 
     fun deleteProduct(id: String) {
+        if (id.isBlank()) {
+            _uiState.value = ProductUiState.Error("Product id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 repository.deleteProduct(id)
                 loadProducts()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = ProductUiState.Error(e.message ?: "Failed to delete product")
+            }
         }
     }
 }

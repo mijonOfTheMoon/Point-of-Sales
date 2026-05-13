@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pointofsales.model.Expense
 import com.example.pointofsales.model.Kas
 import com.example.pointofsales.viewmodel.ExpenseUiState
@@ -24,7 +26,6 @@ import com.example.pointofsales.viewmodel.ExpenseViewModel
 import com.example.pointofsales.viewmodel.KasUiState
 import com.example.pointofsales.viewmodel.KasViewModel
 import java.text.NumberFormat
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,11 +34,11 @@ fun ExpenseScreen(
     kasViewModel: KasViewModel,
     onBack: () -> Unit
 ) {
-    val uiState by expenseViewModel.uiState.collectAsState()
-    val kasState by kasViewModel.uiState.collectAsState()
+    val uiState by expenseViewModel.uiState.collectAsStateWithLifecycle()
+    val kasState by kasViewModel.uiState.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     val cs = MaterialTheme.colorScheme
-    val fmt = remember { NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 } }
+    val fmt = remember { rupiahFormatter() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -190,7 +191,7 @@ fun ExpenseSheet(
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             Text("New Expense", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
             Spacer(modifier = Modifier.height(20.dp))
-            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, leadingIcon = { Icon(Icons.Default.Notes, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount") }, leadingIcon = { Icon(Icons.Default.AttachMoney, null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(12.dp))
@@ -202,7 +203,9 @@ fun ExpenseSheet(
                     label = { Text("Pay from Kas") },
                     leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, null) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                        .fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 )
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

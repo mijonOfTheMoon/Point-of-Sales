@@ -8,15 +8,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,11 +22,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pointofsales.model.DashboardSummary
 import com.example.pointofsales.viewmodel.*
-import java.text.NumberFormat
 import java.util.Calendar
-import java.util.Locale
 
 
 @Composable
@@ -44,14 +40,13 @@ fun DashboardScreen(
     onNavigateToSales: () -> Unit,
     onNavigateToKas: () -> Unit,
     onNavigateToExpenses: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onLogout: () -> Unit
+    onNavigateToProfile: () -> Unit
 ) {
-    val dashboardState  by dashboardViewModel.uiState.collectAsState()
-    val authState       by authViewModel.checkState.collectAsState()
-    val customersState  by customerViewModel.uiState.collectAsState()
-    val kasState        by kasViewModel.uiState.collectAsState()
-    val productsState   by productViewModel.uiState.collectAsState()
+    val dashboardState  by dashboardViewModel.uiState.collectAsStateWithLifecycle()
+    val authState       by authViewModel.checkState.collectAsStateWithLifecycle()
+    val customersState  by customerViewModel.uiState.collectAsStateWithLifecycle()
+    val kasState        by kasViewModel.uiState.collectAsStateWithLifecycle()
+    val productsState   by productViewModel.uiState.collectAsStateWithLifecycle()
 
     val role = (authState as? AuthCheckState.Authenticated)?.role  ?: ""
     val name = (authState as? AuthCheckState.Authenticated)?.name  ?: ""
@@ -170,13 +165,13 @@ fun DashboardScreen(
                 )
 
                 val menuItems = buildList {
-                    if (role in listOf("admin", "supervisor", "cashier")) {
+                    if (role in salesRoles) {
                         add(MenuDef("Sales", "Manage transactions", Icons.Default.ShoppingCart, cs.secondary, cs.primary, onNavigateToSales))
                     }
-                    if (role in listOf("admin", "supervisor", "stocker")) {
+                    if (role in productRoles) {
                         add(MenuDef("Products", "Manage inventory", Icons.Default.Inventory, cs.secondary, cs.primary, onNavigateToProducts))
                     }
-                    if (role in listOf("admin", "supervisor", "cashier")) {
+                    if (role in cashOperationRoles) {
                         add(MenuDef("Customers", "Customer records", Icons.Default.People, cs.secondary, cs.primary, onNavigateToCustomers))
                         add(MenuDef("Kas", "Cash management", Icons.Default.AccountBalanceWallet, cs.secondary, cs.primary, onNavigateToKas))
                         add(MenuDef("Expenses", "Record expenses", Icons.Default.Payments, cs.secondary, cs.primary, onNavigateToExpenses))
@@ -207,6 +202,10 @@ private fun greeting(): String {
         else      -> "Good night,"
     }
 }
+
+private val salesRoles = setOf("admin", "supervisor", "cashier")
+private val productRoles = setOf("admin", "supervisor", "stocker")
+private val cashOperationRoles = setOf("admin", "supervisor", "cashier")
 
 private data class HeaderStatItem(val label: String, val value: String, val icon: ImageVector)
 private data class MenuDef(val title: String, val subtitle: String, val icon: ImageVector, val iconBg: Color, val iconTint: Color, val onClick: () -> Unit)

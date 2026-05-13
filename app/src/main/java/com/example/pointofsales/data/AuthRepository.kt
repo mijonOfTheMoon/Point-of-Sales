@@ -36,35 +36,15 @@ class AuthRepository {
         auth.signOut()
     }
 
-    suspend fun getUserRole(): String {
-        return withContext(Dispatchers.IO) {
-            try {
-                val user = auth.currentSessionOrNull()?.user ?: return@withContext "cashier"
-                val profile = client.postgrest.from("profiles")
-                    .select {
-                        filter {
-                            eq("id", user.id)
-                        }
-                    }.decodeSingle<UserProfile>()
-                profile.role
-            } catch (_: Exception) {
-                "cashier"
-            }
-        }
-    }
-
-    suspend fun getUserName(): String {
-        return withContext(Dispatchers.IO) {
-            try {
-                val user = auth.currentSessionOrNull()?.user ?: return@withContext ""
-                val profile = client.postgrest.from("profiles")
-                    .select {
-                        filter { eq("id", user.id) }
-                    }.decodeSingle<UserProfile>()
-                profile.name
-            } catch (_: Exception) {
-                ""
-            }
+    suspend fun getCurrentUserProfile(): UserProfile? = withContext(Dispatchers.IO) {
+        try {
+            val user = auth.currentSessionOrNull()?.user ?: return@withContext null
+            client.postgrest.from("profiles")
+                .select {
+                    filter { eq("id", user.id) }
+                }.decodeSingle<UserProfile>()
+        } catch (_: Exception) {
+            null
         }
     }
 

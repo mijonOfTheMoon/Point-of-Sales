@@ -37,24 +37,37 @@ class KasViewModel(private val repository: KasRepository = KasRepository()) : Vi
     }
 
     fun manualAdjustment(kasId: String, amount: Double, reason: String) {
+        if (kasId.isBlank()) {
+            _uiState.value = KasUiState.Error("Kas id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 repository.manualAdjustment(kasId, amount, reason)
                 loadKas()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = KasUiState.Error(e.message ?: "Failed to adjust kas")
+            }
         }
     }
 
     fun toggleKasStatus(kas: Kas) {
+        val kasId = kas.id
+        if (kasId.isNullOrBlank()) {
+            _uiState.value = KasUiState.Error("Kas id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 if (kas.is_active) {
-                    repository.deactivateKas(kas.id ?: "")
+                    repository.deactivateKas(kasId)
                 } else {
-                    repository.activateKas(kas.id ?: "")
+                    repository.activateKas(kasId)
                 }
                 loadKas()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = KasUiState.Error(e.message ?: "Failed to update kas status")
+            }
         }
     }
 }

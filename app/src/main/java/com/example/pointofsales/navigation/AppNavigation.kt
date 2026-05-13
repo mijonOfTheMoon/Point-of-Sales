@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -18,7 +18,7 @@ import com.example.pointofsales.viewmodel.*
 @Composable
 fun AppNavigation() {
     val authViewModel: AuthViewModel = viewModel()
-    val checkState by authViewModel.checkState.collectAsState()
+    val checkState by authViewModel.checkState.collectAsStateWithLifecycle()
 
     if (checkState is AuthCheckState.Loading) {
         Box(
@@ -39,21 +39,13 @@ fun AppNavigation() {
 
     when (checkState) {
         is AuthCheckState.Authenticated -> {
-            if (backStack.isNotEmpty() && backStack.last() !is Screen.Dashboard &&
-                backStack.last() !is Screen.Products && backStack.last() !is Screen.Customers &&
-                backStack.last() !is Screen.Sales && backStack.last() !is Screen.Kas &&
-                backStack.last() !is Screen.Expenses && backStack.last() !is Screen.TransactionHistory &&
-                backStack.last() !is Screen.Profile) {
+            if ((backStack.lastOrNull() as? Screen)?.requiresAuthentication() == false) {
                 backStack.clear()
                 backStack.add(Screen.Dashboard)
             }
         }
         AuthCheckState.Unauthenticated -> {
-            if (backStack.isNotEmpty() && (backStack.last() is Screen.Dashboard ||
-                backStack.last() is Screen.Products || backStack.last() is Screen.Customers ||
-                backStack.last() is Screen.Sales || backStack.last() is Screen.Kas ||
-                backStack.last() is Screen.Expenses || backStack.last() is Screen.TransactionHistory ||
-                backStack.last() is Screen.Profile)) {
+            if ((backStack.lastOrNull() as? Screen)?.requiresAuthentication() == true) {
                 backStack.clear()
                 backStack.add(Screen.Login)
             }
@@ -94,7 +86,6 @@ fun AppNavigation() {
                     onNavigateToKas = { backStack.add(Screen.Kas) },
                     onNavigateToExpenses = { backStack.add(Screen.Expenses) },
                     onNavigateToProfile = { backStack.add(Screen.Profile) },
-                    onLogout = { authViewModel.signOut() }
                 )
             }
             entry<Screen.Products> {
@@ -157,4 +148,17 @@ fun AppNavigation() {
             }
         }
     )
+}
+
+private fun Screen.requiresAuthentication(): Boolean = when (this) {
+    Screen.Dashboard,
+    Screen.Products,
+    Screen.Customers,
+    Screen.Sales,
+    Screen.Kas,
+    Screen.Expenses,
+    Screen.TransactionHistory,
+    Screen.Profile -> true
+    Screen.Login,
+    Screen.Register -> false
 }

@@ -41,29 +41,44 @@ class CustomerViewModel(private val repository: CustomerRepository = CustomerRep
             try {
                 repository.registerCustomer(name, phone)
                 loadCustomers()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = CustomerUiState.Error(e.message ?: "Failed to register customer")
+            }
         }
     }
 
     fun updateCustomer(id: String, name: String, phone: String) {
+        if (id.isBlank()) {
+            _uiState.value = CustomerUiState.Error("Customer id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 repository.updateCustomer(id, name, phone)
                 loadCustomers()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = CustomerUiState.Error(e.message ?: "Failed to update customer")
+            }
         }
     }
 
     fun toggleCustomerStatus(customer: Customer) {
+        val customerId = customer.id
+        if (customerId.isNullOrBlank()) {
+            _uiState.value = CustomerUiState.Error("Customer id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 if (customer.is_active) {
-                    repository.deactivateCustomer(customer.id ?: "")
+                    repository.deactivateCustomer(customerId)
                 } else {
-                    repository.activateCustomer(customer.id ?: "")
+                    repository.activateCustomer(customerId)
                 }
                 loadCustomers()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = CustomerUiState.Error(e.message ?: "Failed to update customer status")
+            }
         }
     }
 }

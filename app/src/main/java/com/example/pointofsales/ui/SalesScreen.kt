@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
@@ -25,10 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
-import java.text.NumberFormat
-import java.util.Locale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.pointofsales.model.Customer
 import com.example.pointofsales.model.Kas
 import com.example.pointofsales.viewmodel.*
@@ -42,12 +39,12 @@ fun SalesScreen(
     onBack: () -> Unit,
     onNavigateToHistory: () -> Unit = {}
 ) {
-    val products by salesViewModel.products.collectAsState()
-    val cart by salesViewModel.cart.collectAsState()
-    val uiState by salesViewModel.uiState.collectAsState()
+    val products by salesViewModel.products.collectAsStateWithLifecycle()
+    val cart by salesViewModel.cart.collectAsStateWithLifecycle()
+    val uiState by salesViewModel.uiState.collectAsStateWithLifecycle()
 
-    val customersState by customerViewModel.uiState.collectAsState()
-    val kasState by kasViewModel.uiState.collectAsState()
+    val customersState by customerViewModel.uiState.collectAsStateWithLifecycle()
+    val kasState by kasViewModel.uiState.collectAsStateWithLifecycle()
 
     var selectedCustomer by remember { mutableStateOf<Customer?>(null) }
     var selectedKas by remember { mutableStateOf<Kas?>(null) }
@@ -55,8 +52,14 @@ fun SalesScreen(
     val isCheckoutMode = remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val formatter = remember { NumberFormat.getCurrencyInstance(Locale.Builder().setLanguage("id").setRegion("ID").build()).apply { maximumFractionDigits = 0 } }
-    val total = cart.sumOf { it.product.price * it.quantity }
+    val formatter = remember { rupiahFormatter() }
+    val total = remember(cart) { cart.sumOf { it.product.price * it.quantity } }
+    val totalQuantity = remember(cart) { cart.sumOf { it.quantity.toInt() } }
+    val cartQuantityByProductId = remember(cart) {
+        cart.mapNotNull { item ->
+            item.product.id?.let { id -> id to item.quantity }
+        }.toMap()
+    }
 
     val filteredProducts = remember(products, searchQuery) {
         if (searchQuery.isBlank()) products
@@ -82,7 +85,7 @@ fun SalesScreen(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Process Order →", style = MaterialTheme.typography.titleMedium)
+                                Text("Process Order ->", style = MaterialTheme.typography.titleMedium)
                                 Text(formatter.format(total), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -153,8 +156,7 @@ fun SalesScreen(
                         }
 
                         items(filteredProducts) { product ->
-                            val cartItem = cart.find { it.product.id == product.id }
-                            val qty = cartItem?.quantity?.toInt() ?: 0
+                            val qty = cartQuantityByProductId[product.id]?.toInt() ?: 0
 
                             Box(
                                 modifier = Modifier
@@ -274,7 +276,7 @@ fun SalesScreen(
                             if (uiState is SalesUiState.Loading) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                             } else {
-                                Text("Process Payment →", style = MaterialTheme.typography.titleMedium)
+                                Text("Process Payment ->", style = MaterialTheme.typography.titleMedium)
                             }
                         }
                     }
@@ -303,7 +305,7 @@ fun SalesScreen(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        SubHeaderStat("${cart.size} Item${if (cart.size > 1) "s" else ""}", cart.sumOf { it.quantity.toInt() }.toString() + " pcs", Modifier.weight(1f), cs)
+                        SubHeaderStat("${cart.size} Item${if (cart.size > 1) "s" else ""}", "$totalQuantity pcs", Modifier.weight(1f), cs)
                         SubHeaderStat("Order Total", formatter.format(total), Modifier.weight(1f), cs)
                     }
                 }
@@ -464,10 +466,11 @@ fun SalesScreen(
     }
 
     if (uiState is SalesUiState.Error) {
+        val errorMessage = (uiState as SalesUiState.Error).message
         AlertDialog(
             onDismissRequest = { salesViewModel.resetUiState() },
             title = { Text("An Error Occurred") },
-            text = { Text("Please try again later.") },
+            text = { Text(errorMessage) },
             confirmButton = {
                 Button(
                     onClick = { salesViewModel.resetUiState() },

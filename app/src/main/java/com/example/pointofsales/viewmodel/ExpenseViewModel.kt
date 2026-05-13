@@ -37,20 +37,32 @@ class ExpenseViewModel(private val repository: ExpenseRepository = ExpenseReposi
     }
 
     fun createExpense(description: String, amount: Double, kasId: String) {
+        if (kasId.isBlank()) {
+            _uiState.value = ExpenseUiState.Error("Kas id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 repository.createExpense(description, amount, kasId)
                 loadExpenses()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = ExpenseUiState.Error(e.message ?: "Failed to create expense")
+            }
         }
     }
 
     fun cancelExpense(id: String) {
+        if (id.isBlank()) {
+            _uiState.value = ExpenseUiState.Error("Expense id is missing")
+            return
+        }
         viewModelScope.launch {
             try {
                 repository.cancelExpense(id)
                 loadExpenses()
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                _uiState.value = ExpenseUiState.Error(e.message ?: "Failed to cancel expense")
+            }
         }
     }
 }
