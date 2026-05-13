@@ -60,6 +60,7 @@ fun DashboardScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = cs.primaryContainer,
         contentWindowInsets = WindowInsets(0)
     ) { innerPadding ->
         Column(
@@ -170,15 +171,15 @@ fun DashboardScreen(
 
                 val menuItems = buildList {
                     if (role in listOf("admin", "supervisor", "cashier")) {
-                        add(MenuDef("Sales", "Manage transactions", Icons.Default.ShoppingCart, cs.primaryContainer, cs.inversePrimary, onNavigateToSales))
+                        add(MenuDef("Sales", "Manage transactions", Icons.Default.ShoppingCart, cs.secondary, cs.primary, onNavigateToSales))
                     }
                     if (role in listOf("admin", "supervisor", "stocker")) {
-                        add(MenuDef("Products", "Manage inventory", Icons.Default.Inventory, Color(0xFFE1F5EE), Color(0xFF0F6E56), onNavigateToProducts))
+                        add(MenuDef("Products", "Manage inventory", Icons.Default.Inventory, cs.secondary, cs.primary, onNavigateToProducts))
                     }
                     if (role in listOf("admin", "supervisor", "cashier")) {
-                        add(MenuDef("Customers", "Customer records", Icons.Default.People, cs.primaryContainer, cs.primary, onNavigateToCustomers))
-                        add(MenuDef("Kas", "Cash management", Icons.Default.AccountBalanceWallet, Color(0xFFFAEEDA), Color(0xFF854F0B), onNavigateToKas))
-                        add(MenuDef("Expenses", "Record expenses", Icons.Default.Payments, cs.errorContainer, cs.error, onNavigateToExpenses))
+                        add(MenuDef("Customers", "Customer records", Icons.Default.People, cs.secondary, cs.primary, onNavigateToCustomers))
+                        add(MenuDef("Kas", "Cash management", Icons.Default.AccountBalanceWallet, cs.secondary, cs.primary, onNavigateToKas))
+                        add(MenuDef("Expenses", "Record expenses", Icons.Default.Payments, cs.secondary, cs.primary, onNavigateToExpenses))
                     }
                 }
 
@@ -225,10 +226,11 @@ private fun HeaderStatRow(left: HeaderStatItem, right: HeaderStatItem, cs: Color
 private fun HeaderStatCard(item: HeaderStatItem, cs: ColorScheme, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .height(76.dp)
+            .height(91.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(cs.onPrimary.copy(alpha = 0.10f))
-            .padding(horizontal = 14.dp, vertical = 14.dp)
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {

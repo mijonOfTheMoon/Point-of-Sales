@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -17,10 +18,11 @@ import kotlin.math.abs
 fun SubHeaderStat(label: String, value: String, modifier: Modifier = Modifier, cs: ColorScheme) {
     Box(
         modifier = modifier
-            .height(76.dp)
+            .height(91.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(cs.onPrimary.copy(alpha = 0.10f))
-            .padding(horizontal = 14.dp, vertical = 14.dp)
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
         Column {
             Text(label, fontSize = 11.sp, color = cs.onPrimary.copy(alpha = 0.55f), maxLines = 1, overflow = TextOverflow.Ellipsis)
