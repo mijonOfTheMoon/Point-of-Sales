@@ -101,7 +101,7 @@ fun DashboardScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = role.take(2).uppercase(),
+                            text = (if (name.isNotBlank()) name else role).take(2).uppercase(),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
