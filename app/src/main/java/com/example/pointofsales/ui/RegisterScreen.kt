@@ -48,13 +48,13 @@ fun RegisterScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Buat Akun",
+                text = "Create Account",
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Mulai kelola bisnis Anda dengan mudah",
+                text = "Start managing your business effortlessly",
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(32.dp))
@@ -62,7 +62,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nama Lengkap") },
+                label = { Text("Full Name") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -80,12 +80,12 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Kata Sandi") },
+                label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    val description = if (passwordVisible) "Sembunyikan kata sandi" else "Tampilkan kata sandi"
+                    val description = if (passwordVisible) "Hide password" else "Show password"
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(imageVector = image, contentDescription = description)
                     }
@@ -106,14 +106,14 @@ fun RegisterScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Daftar")
+                    Text("Register")
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             TextButton(onClick = onNavigateToLogin) {
-                Text("Sudah punya akun? Masuk")
+                Text("Already have an account? Sign in")
             }
 
             when (uiState) {
@@ -121,10 +121,10 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     val rawMsg = (uiState as AuthUiState.Error).message.lowercase()
                     val displayMsg = when {
-                        rawMsg.contains("already registered") || rawMsg.contains("exists") -> "Email sudah terdaftar."
-                        rawMsg.contains("network") || rawMsg.contains("fetch") || rawMsg.contains("host") -> "Kesalahan jaringan. Periksa koneksi internet Anda."
-                        rawMsg.contains("password") -> "Kata sandi terlalu lemah."
-                        else -> "Pendaftaran gagal. Silakan coba lagi."
+                        rawMsg.contains("already registered") || rawMsg.contains("exists") -> "Email is already registered."
+                        rawMsg.contains("network") || rawMsg.contains("fetch") || rawMsg.contains("host") -> "Network error. Please check your connection."
+                        rawMsg.contains("password") -> "Password is too weak."
+                        else -> "Registration failed. Please try again."
                     }
                     Text(
                         text = displayMsg,

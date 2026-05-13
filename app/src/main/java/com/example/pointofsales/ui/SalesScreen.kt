@@ -61,7 +61,7 @@ fun SalesScreen(
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text("Menu Kasir", fontWeight = FontWeight.Bold) },
+                    title = { Text("Cashier Menu", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -89,7 +89,7 @@ fun SalesScreen(
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Proses Pesanan →", style = MaterialTheme.typography.titleMedium)
+                                Text("Process Order →", style = MaterialTheme.typography.titleMedium)
                                 Text(formatter.format(total), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -108,7 +108,7 @@ fun SalesScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Cari Menu") },
+                        placeholder = { Text("Search Items") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
@@ -152,7 +152,7 @@ fun SalesScreen(
                                     shape = RoundedCornerShape(4.dp)
                                 ) {
                                     Text(
-                                        text = if (product.stock > 0) "Sisa Stok: $stockDisplay" else "Stok Habis",
+                                        text = if (product.stock > 0) "Stock left: $stockDisplay" else "Out of Stock",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = if (product.stock > 0) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -201,7 +201,7 @@ fun SalesScreen(
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text("Pesanan Checkout", fontWeight = FontWeight.Bold) },
+                    title = { Text("Checkout Order", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
                         IconButton(onClick = { isCheckoutMode.value = false }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -216,7 +216,7 @@ fun SalesScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Pembayaran", style = MaterialTheme.typography.titleMedium)
+                            Text("Total Payment", style = MaterialTheme.typography.titleMedium)
                             Text(formatter.format(total), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         }
 
@@ -235,7 +235,7 @@ fun SalesScreen(
                             if (uiState is SalesUiState.Loading) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                             } else {
-                                Text("Proses Pembayaran →", style = MaterialTheme.typography.titleMedium)
+                                Text("Process Payment →", style = MaterialTheme.typography.titleMedium)
                             }
                         }
                     }
@@ -257,7 +257,7 @@ fun SalesScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Kas Penerima", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                            Text("Receive via Kas", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.height(4.dp))
                             if (kasState is KasUiState.Success) {
                                 val kasList = (kasState as KasUiState.Success).kasList.filter { it.is_active }
@@ -267,7 +267,7 @@ fun SalesScreen(
                                         onClick = { expanded = true },
                                         contentPadding = PaddingValues(0.dp)
                                     ) {
-                                        Text(selectedKas?.name ?: "Pilih Kas", style = MaterialTheme.typography.titleMedium)
+                                        Text(selectedKas?.name ?: "Select Kas", style = MaterialTheme.typography.titleMedium)
                                     }
                                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                                         kasList.forEach { kas ->
@@ -283,13 +283,13 @@ fun SalesScreen(
                                 Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column {
-                                    Text("Nama Customer", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Customer Name", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     if (customersState is CustomerUiState.Success) {
                                         val customerList = (customersState as CustomerUiState.Success).customers.filter { it.is_active }
                                         var expanded by remember { mutableStateOf(false) }
                                         Box {
                                             Text(
-                                                text = selectedCustomer?.name ?: "Pilih",
+                                                text = selectedCustomer?.name ?: "Select",
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.Medium,
                                                 modifier = Modifier.padding(top = 2.dp),
@@ -298,7 +298,7 @@ fun SalesScreen(
                                             Surface(modifier = Modifier.matchParentSize(), color = androidx.compose.ui.graphics.Color.Transparent, onClick = { expanded = true }) {}
 
                                             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                                DropdownMenuItem(text = { Text("Kosongkan") }, onClick = { selectedCustomer = null; expanded = false })
+                                                DropdownMenuItem(text = { Text("None") }, onClick = { selectedCustomer = null; expanded = false })
                                                 customerList.forEach { customer ->
                                                     DropdownMenuItem(text = { Text(customer.name) }, onClick = { selectedCustomer = customer; expanded = false })
                                                 }
@@ -312,7 +312,7 @@ fun SalesScreen(
                 }
 
                 item {
-                    Text("Menu Pesanan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                    Text("Order Items", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
                 }
 
                 items(cart) { item ->
@@ -351,7 +351,7 @@ fun SalesScreen(
 
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Detail Pembayaran", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Payment Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Subtotal", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -371,8 +371,8 @@ fun SalesScreen(
         AlertDialog(
             onDismissRequest = { },
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Success", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) },
-            title = { Text("Transaksi Berhasil", textAlign = TextAlign.Center) },
-            text = { Text("Pembayaran sebesar ${formatter.format(total)} telah diterima.", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+            title = { Text("Transaction Successful", textAlign = TextAlign.Center) },
+            text = { Text("Payment of ${formatter.format(total)} has been received.", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -384,7 +384,7 @@ fun SalesScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Kembali ke Kasir")
+                    Text("Back to Cashier")
                 }
             }
         )
@@ -393,15 +393,15 @@ fun SalesScreen(
     if (uiState is SalesUiState.Error) {
         AlertDialog(
             onDismissRequest = { salesViewModel.resetUiState() },
-            title = { Text("Terjadi Kesalahan") },
-            text = { Text("Silakan coba lagi nanti.") },
+            title = { Text("An Error Occurred") },
+            text = { Text("Please try again later.") },
             confirmButton = {
                 Button(
                     onClick = { salesViewModel.resetUiState() },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Tutup")
+                    Text("Close")
                 }
             }
         )
