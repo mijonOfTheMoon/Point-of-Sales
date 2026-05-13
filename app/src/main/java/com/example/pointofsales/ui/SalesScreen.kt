@@ -1,5 +1,8 @@
 package com.example.pointofsales.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +20,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.draw.scale
@@ -59,21 +65,8 @@ fun SalesScreen(
 
     if (!isCheckoutMode.value) {
         Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("Cashier Menu", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = onNavigateToHistory) {
-                            Icon(Icons.Default.History, contentDescription = "Transaction History")
-                        }
-                    }
-                )
-            },
+            modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets(0),
             bottomBar = {
                 if (cart.isNotEmpty()) {
                     Surface(
@@ -97,99 +90,152 @@ fun SalesScreen(
                 }
             }
         ) { innerPadding ->
-            LazyColumn(
+            val cs = MaterialTheme.colorScheme
+            Column(
                 modifier = Modifier
-                    .padding(innerPadding)
+                    .padding(bottom = innerPadding.calculateBottomPadding())
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search Items") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(cs.primary)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 24.dp, vertical = 24.dp)
+                ) {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Sales", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
+                        }
+                        IconButton(onClick = onNavigateToHistory) {
+                            Icon(Icons.Default.History, contentDescription = "History", tint = cs.onPrimary)
+                        }
+                    }
                 }
 
-                items(filteredProducts) { product ->
-                    val cartItem = cart.find { it.product.id == product.id }
-                    val qty = cartItem?.quantity?.toInt() ?: 0
-
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (qty > 0) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                             else MaterialTheme.colorScheme.surface,
-                        ),
-                        border = if (qty > 0) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(cs.primaryContainer)
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(formatter.format(product.price), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(modifier = Modifier.height(6.dp))
+                        item {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = { Text("Search Items") },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                singleLine = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedBorderColor = cs.outlineVariant,
+                                    unfocusedContainerColor = cs.surface,
+                                    focusedContainerColor = cs.surface
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
 
-                                val stockDisplay = if (product.stock % 1.0 == 0.0) product.stock.toInt().toString() else product.stock.toString()
-                                Surface(
-                                    color = if (product.stock > 0) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
-                                    shape = RoundedCornerShape(4.dp)
+                        items(filteredProducts) { product ->
+                            val cartItem = cart.find { it.product.id == product.id }
+                            val qty = cartItem?.quantity?.toInt() ?: 0
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(cs.surface)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        text = if (product.stock > 0) "Stock left: $stockDisplay" else "Out of Stock",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (product.stock > 0) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(24.dp))
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (qty > 0) {
-                                    IconButton(
-                                        onClick = {
-                                            if (qty > 1) salesViewModel.addToCart(product, -1.0)
-                                            else salesViewModel.removeFromCart(product.id ?: "")
-                                        },
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(formatter.format(product.price), style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        val stockDisplay = if (product.stock % 1.0 == 0.0) product.stock.toInt().toString() else product.stock.toString()
+                                        Surface(color = if (product.stock > 0) cs.secondaryContainer else cs.errorContainer, shape = RoundedCornerShape(4.dp)) {
+                                            Text(
+                                                text = if (product.stock > 0) "Stock left: $stockDisplay" else "Out of Stock",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = if (product.stock > 0) cs.onSecondaryContainer else cs.onErrorContainer,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
                                     }
 
-                                    Text(
-                                        text = qty.toString(),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        modifier = Modifier.padding(horizontal = 16.dp)
-                                    )
-                                }
+                                    Row(
+                                        modifier = Modifier.width(128.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .alpha(if (qty > 0) 1f else 0f)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(cs.primaryContainer)
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null,
+                                                    enabled = qty > 0
+                                                ) {
+                                                    if (qty > 1) salesViewModel.addToCart(product, -1.0)
+                                                    else salesViewModel.removeFromCart(product.id ?: "")
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = cs.primary, modifier = Modifier.size(18.dp))
+                                        }
 
-                                IconButton(
-                                    onClick = { salesViewModel.addToCart(product, 1.0) },
-                                    modifier = Modifier.size(36.dp),
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                ) {
-                                    Icon(Icons.Default.Add, contentDescription = "Increase")
+                                        Box(
+                                            modifier = Modifier.width(36.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (qty > 0) {
+                                                Text(
+                                                    text = qty.toString(),
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = cs.primary
+                                                )
+                                            }
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(cs.primaryContainer)
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null
+                                                ) { salesViewModel.addToCart(product, 1.0) },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = cs.primary, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -199,16 +245,8 @@ fun SalesScreen(
         }
     } else {
         Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("Checkout Order", fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = { isCheckoutMode.value = false }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    }
-                )
-            },
+            modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets(0),
             bottomBar = {
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
@@ -242,11 +280,43 @@ fun SalesScreen(
                 }
             }
         ) { innerPadding ->
+            val cs = MaterialTheme.colorScheme
+            Column(
+                modifier = Modifier
+                    .padding(bottom = innerPadding.calculateBottomPadding())
+                    .fillMaxSize()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(cs.primary)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 24.dp, vertical = 24.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { isCheckoutMode.value = false }, modifier = Modifier.size(40.dp)) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Checkout", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        SubHeaderStat("${cart.size} Item${if (cart.size > 1) "s" else ""}", cart.sumOf { it.quantity.toInt() }.toString() + " pcs", Modifier.weight(1f), cs)
+                        SubHeaderStat("Order Total", formatter.format(total), Modifier.weight(1f), cs)
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(cs.primaryContainer)
+                ) {
             LazyColumn(
                 modifier = Modifier
-                    .padding(innerPadding)
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
@@ -358,6 +428,8 @@ fun SalesScreen(
                         Text(formatter.format(total), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(modifier = Modifier.height(100.dp))
+                }
+            }
                 }
             }
         }

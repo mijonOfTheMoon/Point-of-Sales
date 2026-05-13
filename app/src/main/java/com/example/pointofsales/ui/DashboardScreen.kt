@@ -3,10 +3,10 @@ package com.example.pointofsales.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -66,6 +66,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .padding(bottom = innerPadding.calculateBottomPadding())
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
             Column(
                 modifier = Modifier
@@ -135,8 +136,8 @@ fun DashboardScreen(
                         val activeCust   = (customersState as? CustomerUiState.Success)?.customers?.count { it.is_active } ?: 0
                         val availableKas = (kasState as? KasUiState.Success)?.kasList?.count { it.is_active } ?: 0
                         HeaderStatRow(
-                            HeaderStatItem("Active Customers", activeCust.toString(),   Icons.Default.People),
-                            HeaderStatItem("Available Kas",    availableKas.toString(), Icons.Default.AccountBalanceWallet),
+                            HeaderStatItem("Active Customers", abbreviateNumber(activeCust), Icons.Default.People),
+                            HeaderStatItem("Available Kas",    abbreviateNumber(availableKas), Icons.Default.AccountBalanceWallet),
                             cs
                         )
                     }
@@ -144,8 +145,8 @@ fun DashboardScreen(
                         val total    = (productsState as? ProductUiState.Success)?.products?.size ?: 0
                         val lowStock = (productsState as? ProductUiState.Success)?.products?.count { it.stock <= 5.0 } ?: 0
                         HeaderStatRow(
-                            HeaderStatItem("Total Products", total.toString(),    Icons.Default.Inventory),
-                            HeaderStatItem("Low Stock",      lowStock.toString(), Icons.Default.Warning),
+                            HeaderStatItem("Total Products", abbreviateNumber(total), Icons.Default.Inventory),
+                            HeaderStatItem("Low Stock",      abbreviateNumber(lowStock), Icons.Default.Warning),
                             cs
                         )
                     }
@@ -154,9 +155,9 @@ fun DashboardScreen(
 
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .background(cs.primaryContainer)
-                    .padding(16.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp)
             ) {
                 Text(
                     text = "MAIN MENU",
@@ -167,67 +168,29 @@ fun DashboardScreen(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
+                val menuItems = buildList {
                     if (role in listOf("admin", "supervisor", "cashier")) {
-                        item {
-                            MenuCard(
-                                title    = "Sales",
-                                subtitle = "Manage transactions",
-                                icon     = Icons.Default.ShoppingCart,
-                                iconBg   = cs.primaryContainer,
-                                iconTint = cs.inversePrimary,
-                                onClick  = onNavigateToSales
-                            )
-                        }
+                        add(MenuDef("Sales", "Manage transactions", Icons.Default.ShoppingCart, cs.primaryContainer, cs.inversePrimary, onNavigateToSales))
                     }
                     if (role in listOf("admin", "supervisor", "stocker")) {
-                        item {
-                            MenuCard(
-                                title    = "Products",
-                                subtitle = "Manage inventory",
-                                icon     = Icons.Default.Inventory,
-                                iconBg   = Color(0xFFE1F5EE),
-                                iconTint = Color(0xFF0F6E56),
-                                onClick  = onNavigateToProducts
-                            )
-                        }
+                        add(MenuDef("Products", "Manage inventory", Icons.Default.Inventory, Color(0xFFE1F5EE), Color(0xFF0F6E56), onNavigateToProducts))
                     }
                     if (role in listOf("admin", "supervisor", "cashier")) {
-                        item {
-                            MenuCard(
-                                title    = "Customers",
-                                subtitle = "Customer records",
-                                icon     = Icons.Default.People,
-                                iconBg   = cs.primaryContainer,
-                                iconTint = cs.primary,
-                                onClick  = onNavigateToCustomers
-                            )
+                        add(MenuDef("Customers", "Customer records", Icons.Default.People, cs.primaryContainer, cs.primary, onNavigateToCustomers))
+                        add(MenuDef("Kas", "Cash management", Icons.Default.AccountBalanceWallet, Color(0xFFFAEEDA), Color(0xFF854F0B), onNavigateToKas))
+                        add(MenuDef("Expenses", "Record expenses", Icons.Default.Payments, cs.errorContainer, cs.error, onNavigateToExpenses))
+                    }
+                }
+
+                menuItems.chunked(2).forEachIndexed { idx, row ->
+                    if (idx > 0) Spacer(modifier = Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        row.forEach { item ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                MenuCard(title = item.title, subtitle = item.subtitle, icon = item.icon, iconBg = item.iconBg, iconTint = item.iconTint, onClick = item.onClick)
+                            }
                         }
-                        item {
-                            MenuCard(
-                                title    = "Kas",
-                                subtitle = "Cash management",
-                                icon     = Icons.Default.AccountBalanceWallet,
-                                iconBg   = Color(0xFFFAEEDA),
-                                iconTint = Color(0xFF854F0B),
-                                onClick  = onNavigateToKas
-                            )
-                        }
-                        item {
-                            MenuCard(
-                                title    = "Expenses",
-                                subtitle = "Record expenses",
-                                icon     = Icons.Default.Payments,
-                                iconBg   = cs.errorContainer,
-                                iconTint = cs.error,
-                                onClick  = onNavigateToExpenses
-                            )
-                        }
+                        if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -245,6 +208,7 @@ private fun greeting(): String {
 }
 
 private data class HeaderStatItem(val label: String, val value: String, val icon: ImageVector)
+private data class MenuDef(val title: String, val subtitle: String, val icon: ImageVector, val iconBg: Color, val iconTint: Color, val onClick: () -> Unit)
 
 @Composable
 private fun HeaderStatRow(left: HeaderStatItem, right: HeaderStatItem, cs: ColorScheme) {
@@ -261,9 +225,10 @@ private fun HeaderStatRow(left: HeaderStatItem, right: HeaderStatItem, cs: Color
 private fun HeaderStatCard(item: HeaderStatItem, cs: ColorScheme, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
+            .height(76.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(cs.onPrimary.copy(alpha = 0.10f))
-            .padding(horizontal = 14.dp, vertical = 18.dp)
+            .padding(horizontal = 14.dp, vertical = 14.dp)
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -274,27 +239,24 @@ private fun HeaderStatCard(item: HeaderStatItem, cs: ColorScheme, modifier: Modi
                     tint = cs.onPrimary.copy(alpha = 0.55f)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
-                Text(item.label, fontSize = 11.sp, color = cs.onPrimary.copy(alpha = 0.55f))
+                Text(item.label, fontSize = 11.sp, color = cs.onPrimary.copy(alpha = 0.55f), maxLines = 1)
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(item.value, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, color = cs.onPrimary)
+            Text(item.value, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = cs.onPrimary, maxLines = 1)
         }
     }
 }
 
 @Composable
 private fun AdminStatGrid(summary: DashboardSummary, cs: ColorScheme) {
-    val fmt = remember {
-        NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 }
-    }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HeaderStatCard(HeaderStatItem("Total Sales",  fmt.format(summary.total_sales_value), Icons.AutoMirrored.Filled.TrendingUp),   cs, Modifier.weight(1f))
-            HeaderStatCard(HeaderStatItem("Expenses",     fmt.format(summary.total_expenses),     Icons.AutoMirrored.Filled.TrendingDown), cs, Modifier.weight(1f))
+            HeaderStatCard(HeaderStatItem("Total Sales",  "Rp${abbreviateNumber(summary.total_sales_value)}", Icons.AutoMirrored.Filled.TrendingUp),   cs, Modifier.weight(1f))
+            HeaderStatCard(HeaderStatItem("Expenses",     "Rp${abbreviateNumber(summary.total_expenses)}",     Icons.AutoMirrored.Filled.TrendingDown), cs, Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            HeaderStatCard(HeaderStatItem("Transactions", summary.total_transactions.toString(), Icons.Default.Receipt), cs, Modifier.weight(1f))
-            HeaderStatCard(HeaderStatItem("Cash in Kas",  fmt.format(summary.total_cash_active), Icons.Default.Money),  cs, Modifier.weight(1f))
+            HeaderStatCard(HeaderStatItem("Transactions", abbreviateNumber(summary.total_transactions), Icons.Default.Receipt), cs, Modifier.weight(1f))
+            HeaderStatCard(HeaderStatItem("Cash in Kas",  "Rp${abbreviateNumber(summary.total_cash_active)}", Icons.Default.Money),  cs, Modifier.weight(1f))
         }
     }
 }
@@ -314,7 +276,7 @@ private fun MenuCard(
         onClick   = onClick,
         shape     = RoundedCornerShape(16.dp),
         colors    = CardDefaults.cardColors(containerColor = cs.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier  = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

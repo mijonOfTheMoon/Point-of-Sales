@@ -188,7 +188,7 @@ fun ProfileScreen(
                     onClick = { showEditSheet = true },
                     shape     = RoundedCornerShape(16.dp),
                     colors    = CardDefaults.cardColors(containerColor = cs.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     modifier  = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -226,7 +226,7 @@ fun ProfileScreen(
                     onClick = { authViewModel.signOut(); onLogout() },
                     shape     = RoundedCornerShape(16.dp),
                     colors    = CardDefaults.cardColors(containerColor = cs.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     modifier  = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -394,7 +394,7 @@ private fun ProfileActionCard(
     Card(
         shape     = RoundedCornerShape(16.dp),
         colors    = CardDefaults.cardColors(containerColor = cs.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier  = Modifier.fillMaxWidth()
     ) {
         Row(

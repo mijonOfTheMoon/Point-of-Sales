@@ -1,15 +1,21 @@
 package com.example.pointofsales.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.pointofsales.model.Expense
 import com.example.pointofsales.model.Kas
@@ -17,6 +23,8 @@ import com.example.pointofsales.viewmodel.ExpenseUiState
 import com.example.pointofsales.viewmodel.ExpenseViewModel
 import com.example.pointofsales.viewmodel.KasUiState
 import com.example.pointofsales.viewmodel.KasViewModel
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,34 +35,72 @@ fun ExpenseScreen(
 ) {
     val uiState by expenseViewModel.uiState.collectAsState()
     val kasState by kasViewModel.uiState.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showAddSheet by remember { mutableStateOf(false) }
+    val cs = MaterialTheme.colorScheme
+    val fmt = remember { NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply { maximumFractionDigits = 0 } }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Expense Tracking") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
+        modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            FloatingActionButton(
+                onClick = { showAddSheet = true },
+                containerColor = cs.primary,
+                contentColor = cs.onPrimary,
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Expense")
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            when (uiState) {
-                is ExpenseUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                is ExpenseUiState.Error -> Text((uiState as ExpenseUiState.Error).message, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
-                is ExpenseUiState.Success -> {
-                    val list = (uiState as ExpenseUiState.Success).expenses
-                    LazyColumn {
-                        items(list) { expense ->
-                            ExpenseItem(expense = expense, onCancel = { expenseViewModel.cancelExpense(it.id ?: "") })
+        Column(
+            modifier = Modifier
+                .padding(bottom = innerPadding.calculateBottomPadding())
+                .fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(cs.primary)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 24.dp, vertical = 24.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Expenses", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                val expenses = (uiState as? ExpenseUiState.Success)?.expenses ?: emptyList()
+                val totalActive = expenses.filter { !it.is_cancelled }.sumOf { it.amount }
+                val count = expenses.count { !it.is_cancelled }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SubHeaderStat("Records", count.toString(), Modifier.weight(1f), cs)
+                    SubHeaderStat("Total Spent", fmt.format(totalActive), Modifier.weight(1f), cs)
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(cs.primaryContainer)
+                    .padding(16.dp)
+            ) {
+                when (uiState) {
+                    is ExpenseUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = cs.primary)
+                    }
+                    is ExpenseUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text((uiState as ExpenseUiState.Error).message, color = cs.error)
+                    }
+                    is ExpenseUiState.Success -> {
+                        val list = (uiState as ExpenseUiState.Success).expenses
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            items(list) { expense ->
+                                ExpenseItem(expense = expense, fmt = fmt, onCancel = { expenseViewModel.cancelExpense(it.id ?: "") })
+                            }
                         }
                     }
                 }
@@ -62,66 +108,120 @@ fun ExpenseScreen(
         }
     }
 
-    if (showAddDialog) {
-        var description by remember { mutableStateOf("") }
-        var amount by remember { mutableStateOf("") }
-        var selectedKas by remember { mutableStateOf<Kas?>(null) }
-        var expanded by remember { mutableStateOf(false) }
-
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("New Expense") },
-            text = {
-                Column {
-                    OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") })
-                    OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount") })
-                    
-                    Text("Pay from Kas", style = MaterialTheme.typography.labelMedium)
-                    if (kasState is KasUiState.Success) {
-                        val kasList = (kasState as KasUiState.Success).kasList.filter { it.is_active }
-                        Box {
-                            TextButton(onClick = { expanded = true }) {
-                                Text(selectedKas?.name ?: "Select Kas")
-                            }
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                kasList.forEach { kas ->
-                                    DropdownMenuItem(text = { Text(kas.name) }, onClick = { selectedKas = kas; expanded = false })
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    selectedKas?.id?.let {
-                        expenseViewModel.createExpense(description, amount.toDoubleOrNull() ?: 0.0, it)
-                        showAddDialog = false
-                    }
-                }, enabled = selectedKas != null) {
-                    Text("Confirm")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text("Cancel") }
+    if (showAddSheet) {
+        val kasList = (kasState as? KasUiState.Success)?.kasList?.filter { it.is_active } ?: emptyList()
+        ExpenseSheet(
+            kasList = kasList,
+            onDismiss = { showAddSheet = false },
+            onConfirm = { description, amount, kasId ->
+                expenseViewModel.createExpense(description, amount, kasId)
+                showAddSheet = false
             }
         )
     }
 }
 
 @Composable
-fun ExpenseItem(expense: Expense, onCancel: (Expense) -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+fun ExpenseItem(
+    expense: Expense,
+    fmt: NumberFormat,
+    onCancel: (Expense) -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cs.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
+                    .background(if (expense.is_cancelled) cs.errorContainer.copy(alpha = 0.4f) else cs.errorContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Payments, contentDescription = null, tint = if (expense.is_cancelled) cs.error.copy(alpha = 0.4f) else cs.error, modifier = Modifier.size(26.dp))
+            }
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(expense.description, style = MaterialTheme.typography.titleMedium)
-                Text("Amount: $${expense.amount}", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    expense.description,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (expense.is_cancelled) cs.onSurface.copy(alpha = 0.4f) else cs.primary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    fmt.format(expense.amount),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = if (expense.is_cancelled) cs.onSurface.copy(alpha = 0.35f) else cs.error
+                )
                 if (expense.is_cancelled) {
-                    Text("CANCELLED", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(color = cs.errorContainer, shape = RoundedCornerShape(4.dp)) {
+                        Text("Cancelled", style = MaterialTheme.typography.labelSmall, color = cs.onErrorContainer, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
                 }
             }
             if (!expense.is_cancelled) {
-                TextButton(onClick = { onCancel(expense) }) { Text("Cancel", color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = { onCancel(expense) }) {
+                    Text("Cancel", color = cs.error, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExpenseSheet(
+    kasList: List<Kas>,
+    onDismiss: () -> Unit,
+    onConfirm: (String, Double, String) -> Unit
+) {
+    var description by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    var selectedKas by remember { mutableStateOf<Kas?>(null) }
+    var expanded by remember { mutableStateOf(false) }
+    val cs = MaterialTheme.colorScheme
+
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = cs.surface, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+            Text("New Expense", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
+            Spacer(modifier = Modifier.height(20.dp))
+            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, leadingIcon = { Icon(Icons.Default.Notes, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount") }, leadingIcon = { Icon(Icons.Default.AttachMoney, null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(12.dp))
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                OutlinedTextField(
+                    value = selectedKas?.name ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Pay from Kas") },
+                    leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, null) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                )
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    kasList.forEach { kas ->
+                        DropdownMenuItem(
+                            text = { Text(kas.name) },
+                            onClick = { selectedKas = kas; expanded = false }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = { selectedKas?.id?.let { onConfirm(description, amount.toDoubleOrNull() ?: 0.0, it) } },
+                enabled = selectedKas != null && description.isNotBlank() && amount.isNotBlank(),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Record Expense", style = MaterialTheme.typography.titleSmall)
             }
         }
     }

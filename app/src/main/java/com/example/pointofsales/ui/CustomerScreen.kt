@@ -1,20 +1,25 @@
 package com.example.pointofsales.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.pointofsales.model.Customer
 import com.example.pointofsales.viewmodel.CustomerUiState
 import com.example.pointofsales.viewmodel.CustomerViewModel
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,43 +28,75 @@ fun CustomerScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showAddSheet by remember { mutableStateOf(false) }
     var customerToEdit by remember { mutableStateOf<Customer?>(null) }
+    val cs = MaterialTheme.colorScheme
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Customer Management") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
+        modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            FloatingActionButton(
+                onClick = { showAddSheet = true },
+                containerColor = cs.primary,
+                contentColor = cs.onPrimary,
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Customer")
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            when (uiState) {
-                is CustomerUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                is CustomerUiState.Error -> Text(
-                    text = (uiState as CustomerUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-                is CustomerUiState.Success -> {
-                    val customers = (uiState as CustomerUiState.Success).customers
-                    LazyColumn {
-                        items(customers) { customer ->
-                            CustomerItem(
-                                customer = customer,
-                                onEdit = { customerToEdit = it },
-                                onToggleStatus = { viewModel.toggleCustomerStatus(it) }
-                            )
+        Column(
+            modifier = Modifier
+                .padding(bottom = innerPadding.calculateBottomPadding())
+                .fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(cs.primary)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 24.dp, vertical = 24.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Customers", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                val count = (uiState as? CustomerUiState.Success)?.customers?.size ?: 0
+                val active = (uiState as? CustomerUiState.Success)?.customers?.count { it.is_active } ?: 0
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SubHeaderStat("Total", abbreviateNumber(count), Modifier.weight(1f), cs)
+                    SubHeaderStat("Active", abbreviateNumber(active), Modifier.weight(1f), cs)
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(cs.primaryContainer)
+                    .padding(16.dp)
+            ) {
+                when (uiState) {
+                    is CustomerUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = cs.primary)
+                    }
+                    is CustomerUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text((uiState as CustomerUiState.Error).message, color = cs.error)
+                    }
+                    is CustomerUiState.Success -> {
+                        val customers = (uiState as CustomerUiState.Success).customers
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+                            items(customers) { customer ->
+                                CustomerItem(
+                                    customer = customer,
+                                    onEdit = { customerToEdit = it },
+                                    onToggleStatus = { viewModel.toggleCustomerStatus(it) }
+                                )
+                            }
                         }
                     }
                 }
@@ -67,24 +104,17 @@ fun CustomerScreen(
         }
     }
 
-    if (showAddDialog) {
-        CustomerDialog(
-            onDismiss = { showAddDialog = false },
-            onConfirm = { name, phone ->
-                viewModel.registerCustomer(name, phone)
-                showAddDialog = false
-            }
+    if (showAddSheet) {
+        CustomerSheet(
+            onDismiss = { showAddSheet = false },
+            onConfirm = { name, phone -> viewModel.registerCustomer(name, phone); showAddSheet = false }
         )
     }
-
     customerToEdit?.let { customer ->
-        CustomerDialog(
+        CustomerSheet(
             customer = customer,
             onDismiss = { customerToEdit = null },
-            onConfirm = { name, phone ->
-                viewModel.updateCustomer(customer.id ?: "", name, phone)
-                customerToEdit = null
-            }
+            onConfirm = { name, phone -> viewModel.updateCustomer(customer.id ?: "", name, phone); customerToEdit = null }
         )
     }
 }
@@ -95,62 +125,68 @@ fun CustomerItem(
     onEdit: (Customer) -> Unit,
     onToggleStatus: (Customer) -> Unit
 ) {
+    val cs = MaterialTheme.colorScheme
     Card(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cs.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(cs.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = cs.primary, modifier = Modifier.size(26.dp))
+            }
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = customer.name, style = MaterialTheme.typography.titleMedium)
-                Text(text = "Phone: ${customer.phone}", style = MaterialTheme.typography.bodySmall)
-                Text(
-                    text = if (customer.is_active) "Active" else "Inactive",
-                    color = if (customer.is_active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelSmall
-                )
+                Text(customer.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = cs.primary)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(customer.phone, style = MaterialTheme.typography.bodySmall, color = cs.onSurface.copy(alpha = 0.55f))
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    color = if (customer.is_active) cs.secondaryContainer else cs.errorContainer,
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = if (customer.is_active) "Active" else "Inactive",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (customer.is_active) cs.onSecondaryContainer else cs.onErrorContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
             IconButton(onClick = { onEdit(customer) }) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = cs.primary)
             }
-            Switch(
-                checked = customer.is_active,
-                onCheckedChange = { onToggleStatus(customer) }
-            )
+            Switch(checked = customer.is_active, onCheckedChange = { onToggleStatus(customer) })
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerDialog(
+fun CustomerSheet(
     customer: Customer? = null,
     onDismiss: () -> Unit,
     onConfirm: (String, String) -> Unit
 ) {
     var name by remember { mutableStateOf(customer?.name ?: "") }
     var phone by remember { mutableStateOf(customer?.phone ?: "") }
+    val cs = MaterialTheme.colorScheme
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (customer == null) "Register Customer" else "Update Customer") },
-        text = {
-            Column {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-                OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") })
-            }
-        },
-        confirmButton = {
-            Button(onClick = { onConfirm(name, phone) }) {
-                Text("Confirm")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = cs.surface, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+            Text(if (customer == null) "Register Customer" else "Edit Customer", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
+            Spacer(modifier = Modifier.height(20.dp))
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, leadingIcon = { Icon(Icons.Default.Person, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") }, leadingIcon = { Icon(Icons.Default.Phone, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = { onConfirm(name, phone) }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp)) {
+                Text(if (customer == null) "Register" else "Save Changes", style = MaterialTheme.typography.titleSmall)
             }
         }
-    )
+    }
 }
