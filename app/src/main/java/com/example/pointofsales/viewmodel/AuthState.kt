@@ -9,6 +9,6 @@ sealed interface AuthUiState {
 
 sealed interface AuthCheckState {
     data object Loading : AuthCheckState
-    data class Authenticated(val role: String, val email: String = "") : AuthCheckState
+    data class Authenticated(val role: String, val email: String = "", val name: String = "") : AuthCheckState
     data object Unauthenticated : AuthCheckState
 }

@@ -53,11 +53,11 @@ fun DashboardScreen(
     val kasState        by kasViewModel.uiState.collectAsState()
     val productsState   by productViewModel.uiState.collectAsState()
 
-    val role = (authState as? AuthCheckState.Authenticated)?.role ?: ""
+    val role = (authState as? AuthCheckState.Authenticated)?.role  ?: ""
+    val name = (authState as? AuthCheckState.Authenticated)?.name  ?: ""
 
     val cs = MaterialTheme.colorScheme
 
-    // The header spans behind the status bar; only the body uses innerPadding at the bottom.
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0)
@@ -67,13 +67,12 @@ fun DashboardScreen(
                 .padding(bottom = innerPadding.calculateBottomPadding())
                 .fillMaxSize()
         ) {
-            // ── Dark header (extends behind status bar) ───────────────────────
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(cs.primary)
                     .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
+                    .padding(horizontal = 24.dp, vertical = 28.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -83,13 +82,13 @@ fun DashboardScreen(
                     Column {
                         Text(
                             text = greeting(),
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             color = cs.onPrimary.copy(alpha = 0.55f)
                         )
                         Text(
-                            text = "POS Dashboard",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
+                            text = if (name.isNotBlank()) name else "POS Dashboard",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
                             color = cs.onPrimary
                         )
                     }
@@ -110,7 +109,7 @@ fun DashboardScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 when (role) {
                     "admin", "supervisor" -> {
@@ -153,7 +152,6 @@ fun DashboardScreen(
                 }
             }
 
-            // ── Body ─────────────────────────────────────────────────────────
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -239,10 +237,10 @@ fun DashboardScreen(
 
 private fun greeting(): String {
     return when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-        in 0..11  -> "Good morning 👋"
-        in 12..14 -> "Good afternoon 👋"
-        in 15..17 -> "Good evening 👋"
-        else      -> "Good night 👋"
+        in 0..11  -> "Good morning,"
+        in 12..14 -> "Good afternoon,"
+        in 15..17 -> "Good evening,"
+        else      -> "Good night,"
     }
 }
 
@@ -265,7 +263,7 @@ private fun HeaderStatCard(item: HeaderStatItem, cs: ColorScheme, modifier: Modi
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .background(cs.onPrimary.copy(alpha = 0.10f))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(horizontal = 14.dp, vertical = 18.dp)
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -279,7 +277,7 @@ private fun HeaderStatCard(item: HeaderStatItem, cs: ColorScheme, modifier: Modi
                 Text(item.label, fontSize = 11.sp, color = cs.onPrimary.copy(alpha = 0.55f))
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(item.value, fontSize = 24.sp, fontWeight = FontWeight.Medium, color = cs.onPrimary)
+            Text(item.value, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, color = cs.onPrimary)
         }
     }
 }

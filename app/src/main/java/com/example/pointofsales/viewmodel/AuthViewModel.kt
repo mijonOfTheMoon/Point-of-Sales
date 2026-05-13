@@ -23,9 +23,10 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
     private fun checkSession() {
         viewModelScope.launch {
             if (repository.isUserLoggedIn()) {
-                val role = repository.getUserRole()
+                val role  = repository.getUserRole()
                 val email = repository.getUserEmail()
-                _checkState.value = AuthCheckState.Authenticated(role, email)
+                val name  = repository.getUserName()
+                _checkState.value = AuthCheckState.Authenticated(role, email, name)
             } else {
                 _checkState.value = AuthCheckState.Unauthenticated
             }
@@ -49,10 +50,11 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
             _uiState.value = AuthUiState.Loading
             try {
                 repository.signIn(email, password)
-                _uiState.value = AuthUiState.Success("Login successful!")
-                val role = repository.getUserRole()
+                val role  = repository.getUserRole()
                 val email = repository.getUserEmail()
-                _checkState.value = AuthCheckState.Authenticated(role, email)
+                val name  = repository.getUserName()
+                _checkState.value = AuthCheckState.Authenticated(role, email, name)
+                _uiState.value = AuthUiState.Success("Login successful!")
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Login failed")
             }
@@ -65,6 +67,23 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
                 repository.signOut()
                 _checkState.value = AuthCheckState.Unauthenticated
             } catch (_: Exception) {}
+        }
+    }
+
+    /** Update name/email/password without terminating the session. */
+    fun updateProfile(newName: String?, newEmail: String?, newPassword: String?) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            try {
+                repository.updateProfile(newName, newEmail, newPassword)
+                val role  = repository.getUserRole()
+                val email = repository.getUserEmail()
+                val name  = repository.getUserName()
+                _checkState.value = AuthCheckState.Authenticated(role, email, name)
+                _uiState.value = AuthUiState.Success("Profile updated successfully!")
+            } catch (e: Exception) {
+                _uiState.value = AuthUiState.Error(e.message ?: "Update failed")
+            }
         }
     }
 

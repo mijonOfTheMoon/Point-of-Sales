@@ -23,7 +23,6 @@ val PoppinsFontFamily = FontFamily(
     Font(googleFont = PoppinsFont, fontProvider = provider, weight = FontWeight.Normal)
 )
 
-// Set of Material typography styles to start with
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = PoppinsFontFamily,

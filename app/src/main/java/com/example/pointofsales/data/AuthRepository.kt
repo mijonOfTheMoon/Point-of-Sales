@@ -53,8 +53,48 @@ class AuthRepository {
         }
     }
 
+    suspend fun getUserName(): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                val user = auth.currentSessionOrNull()?.user ?: return@withContext ""
+                val profile = client.postgrest.from("profiles")
+                    .select {
+                        filter { eq("id", user.id) }
+                    }.decodeSingle<UserProfile>()
+                profile.name
+            } catch (_: Exception) {
+                ""
+            }
+        }
+    }
+
     fun getUserEmail(): String {
         return auth.currentSessionOrNull()?.user?.email ?: ""
+    }
+
+    suspend fun updateProfile(
+        newName: String?,
+        newEmail: String?,
+        newPassword: String?
+    ) = withContext(Dispatchers.IO) {
+        val userId = auth.currentSessionOrNull()?.user?.id
+            ?: throw IllegalStateException("No authenticated user")
+
+        if (!newName.isNullOrBlank()) {
+            client.postgrest.from("profiles").update(
+                { set("name", newName) }
+            ) {
+                filter { eq("id", userId) }
+            }
+        }
+
+        if (!newEmail.isNullOrBlank()) {
+            auth.updateUser { email = newEmail }
+        }
+
+        if (!newPassword.isNullOrBlank()) {
+            auth.updateUser { password = newPassword }
+        }
     }
 
     suspend fun isUserLoggedIn(): Boolean {
