@@ -131,7 +131,8 @@ fun SalesScreen(
                             .fillMaxSize()
                             .padding(horizontal = 16.dp)
                             .padding(top = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 24.dp)
                     ) {
                         item {
                             OutlinedTextField(

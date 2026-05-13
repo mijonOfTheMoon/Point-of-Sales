@@ -77,8 +77,8 @@ fun ExpenseScreen(
                 val totalActive = expenses.filter { !it.is_cancelled }.sumOf { it.amount }
                 val count = expenses.count { !it.is_cancelled }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SubHeaderStat("Records", count.toString(), Modifier.weight(1f), cs)
-                    SubHeaderStat("Total Spent", fmt.format(totalActive), Modifier.weight(1f), cs)
+                    SubHeaderStat("Records", abbreviateNumber(count), Modifier.weight(1f), cs)
+                    SubHeaderStat("Total Spent", "Rp${abbreviateNumber(totalActive)}", Modifier.weight(1f), cs)
                 }
             }
 
@@ -97,7 +97,7 @@ fun ExpenseScreen(
                     }
                     is ExpenseUiState.Success -> {
                         val list = (uiState as ExpenseUiState.Success).expenses
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
                             items(list) { expense ->
                                 ExpenseItem(expense = expense, fmt = fmt, onCancel = { expenseViewModel.cancelExpense(it.id ?: "") })
                             }
