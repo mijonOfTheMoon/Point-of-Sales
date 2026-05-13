@@ -4,6 +4,8 @@ import com.example.pointofsales.model.Product
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class ProductRepository {
     private val postgrest = SupabaseClientProvider.client.postgrest
@@ -25,10 +27,11 @@ class ProductRepository {
     }
 
     suspend fun deleteProduct(id: String) = withContext(Dispatchers.IO) {
-        postgrest["product"].delete {
-            filter {
-                eq("id", id)
+        postgrest.rpc(
+            function = "deactivate_product",
+            parameters = buildJsonObject {
+                put("p_product_id", id)
             }
-        }
+        )
     }
 }

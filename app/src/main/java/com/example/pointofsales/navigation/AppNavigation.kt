@@ -132,10 +132,8 @@ fun AppNavigation() {
             }
             entry<Screen.TransactionHistory> {
                 val salesViewModel: SalesViewModel = viewModel()
-                val kasViewModel: KasViewModel = viewModel()
                 TransactionHistoryScreen(
                     salesViewModel = salesViewModel,
-                    kasViewModel = kasViewModel,
                     onBack = { backStack.removeLastOrNull() }
                 )
             }

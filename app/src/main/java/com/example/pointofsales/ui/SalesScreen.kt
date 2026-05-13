@@ -156,7 +156,9 @@ fun SalesScreen(
                         }
 
                         items(filteredProducts) { product ->
-                            val qty = cartQuantityByProductId[product.id]?.toInt() ?: 0
+                            val currentQty = cartQuantityByProductId[product.id] ?: 0.0
+                            val qty = currentQty.toInt()
+                            val canIncrease = currentQty < product.stock
 
                             Box(
                                 modifier = Modifier
@@ -229,14 +231,20 @@ fun SalesScreen(
                                             modifier = Modifier
                                                 .size(36.dp)
                                                 .clip(RoundedCornerShape(10.dp))
-                                                .background(cs.primaryContainer)
+                                                .background(if (canIncrease) cs.primaryContainer else cs.surfaceVariant)
                                                 .clickable(
                                                     interactionSource = remember { MutableInteractionSource() },
-                                                    indication = null
+                                                    indication = null,
+                                                    enabled = canIncrease
                                                 ) { salesViewModel.addToCart(product, 1.0) },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = cs.primary, modifier = Modifier.size(18.dp))
+                                            Icon(
+                                                Icons.Default.Add,
+                                                contentDescription = "Increase",
+                                                tint = if (canIncrease) cs.primary else cs.onSurface.copy(alpha = 0.38f),
+                                                modifier = Modifier.size(18.dp)
+                                            )
                                         }
                                     }
                                 }
@@ -389,6 +397,8 @@ fun SalesScreen(
                 }
 
                 items(cart) { item ->
+                    val canIncrease = item.quantity < item.product.stock
+
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -414,7 +424,11 @@ fun SalesScreen(
                                     Icon(Icons.Default.Remove, contentDescription = "Decrease")
                                 }
                                 Text(item.quantity.toInt().toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
-                                IconButton(onClick = { salesViewModel.addToCart(item.product, 1.0) }, modifier = Modifier.size(32.dp)) {
+                                IconButton(
+                                    onClick = { salesViewModel.addToCart(item.product, 1.0) },
+                                    enabled = canIncrease,
+                                    modifier = Modifier.size(32.dp)
+                                ) {
                                     Icon(Icons.Default.Add, contentDescription = "Increase")
                                 }
                             }

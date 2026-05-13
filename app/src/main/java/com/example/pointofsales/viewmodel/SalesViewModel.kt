@@ -55,7 +55,7 @@ class SalesViewModel(
         }
     }
 
-    fun loadTransactions(kasId: String) {
+    fun loadTransactions(kasId: String? = null) {
         viewModelScope.launch {
             try {
                 _transactions.value = salesRepository.getTransactions(kasId)
@@ -68,19 +68,21 @@ class SalesViewModel(
     fun addToCart(product: Product, quantity: Double = 1.0) {
         val productId = product.id ?: return
         if (quantity == 0.0) return
+        val maxQuantity = product.stock.coerceAtLeast(0.0)
+        if (quantity > 0.0 && maxQuantity <= 0.0) return
 
         val currentCart = _cart.value.toMutableList()
         val existingItemIndex = currentCart.indexOfFirst { it.product.id == productId }
         if (existingItemIndex != -1) {
             val existingItem = currentCart[existingItemIndex]
-            val updatedQuantity = existingItem.quantity + quantity
+            val updatedQuantity = (existingItem.quantity + quantity).coerceAtMost(maxQuantity)
             if (updatedQuantity > 0.0) {
                 currentCart[existingItemIndex] = existingItem.copy(quantity = updatedQuantity)
             } else {
                 currentCart.removeAt(existingItemIndex)
             }
         } else if (quantity > 0.0) {
-            currentCart.add(CartItem(product, quantity))
+            currentCart.add(CartItem(product, quantity.coerceAtMost(maxQuantity)))
         }
         _cart.value = currentCart
     }

@@ -19,7 +19,7 @@ class ExpenseRepository {
             function = "create_expense",
             parameters = buildJsonObject {
                 put("p_description", description)
-                put("p_amount", amount)
+                put("p_total", amount)
                 put("p_kas_id", kasId)
             }
         )

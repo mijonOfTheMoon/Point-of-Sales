@@ -124,19 +124,19 @@ fun ProfileScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = cs.onPrimary
                         )
-                        Text(
-                            text = role.replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = cs.onPrimary.copy(alpha = 0.6f)
-                        )
                         if (email.isNotBlank()) {
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = email,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = cs.onPrimary.copy(alpha = 0.45f)
+                                color = cs.onPrimary.copy(alpha = 0.6f)
                             )
                         }
+                        Text(
+                            text = role.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = cs.onPrimary.copy(alpha = 0.45f)
+                        )
                     }
                 }
             }
@@ -152,11 +152,11 @@ fun ProfileScreen(
                 SectionLabel("ACCOUNT")
 
                 ProfileActionCard(
-                    icon     = Icons.Default.Badge,
+                    icon     = Icons.Default.Person,
                     iconBg   = cs.primaryContainer,
                     iconTint = cs.primary,
-                    label    = "Role",
-                    value    = role.replaceFirstChar { it.uppercase() }
+                    label    = "Display Name",
+                    value    = if (name.isNotBlank()) name else "-"
                 )
 
                 if (email.isNotBlank()) {
@@ -172,11 +172,11 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 ProfileActionCard(
-                    icon     = Icons.Default.Person,
+                    icon     = Icons.Default.Badge,
                     iconBg   = cs.primaryContainer,
                     iconTint = cs.primary,
-                    label    = "Display Name",
-                    value    = if (name.isNotBlank()) name else "-"
+                    label    = "Role",
+                    value    = role.replaceFirstChar { it.uppercase() }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))

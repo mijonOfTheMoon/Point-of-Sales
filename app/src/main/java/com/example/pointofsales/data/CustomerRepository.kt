@@ -30,8 +30,8 @@ class CustomerRepository {
             function = "update_customer_profile",
             parameters = buildJsonObject {
                 put("p_customer_id", id)
-                put("p_new_name", name)
-                put("p_new_phone", phone)
+                put("p_name", name)
+                put("p_phone", phone)
             }
         )
     }

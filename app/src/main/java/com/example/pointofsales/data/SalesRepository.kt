@@ -15,10 +15,12 @@ import kotlinx.serialization.json.put
 class SalesRepository {
     private val postgrest = SupabaseClientProvider.client.postgrest
 
-    suspend fun getTransactions(kasId: String): List<TransactionWithItems> = withContext(Dispatchers.IO) {
+    suspend fun getTransactions(kasId: String? = null): List<TransactionWithItems> = withContext(Dispatchers.IO) {
         postgrest["transaction"].select(columns = Columns.raw("*, transaction_item(*), customer(name)")) {
-            filter {
-                eq("kas_id", kasId)
+            if (!kasId.isNullOrBlank()) {
+                filter {
+                    eq("kas_id", kasId)
+                }
             }
             order("sold_at", Order.DESCENDING)
         }.decodeList<TransactionWithItems>()

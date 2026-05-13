@@ -19,8 +19,8 @@ class KasRepository {
             function = "manual_kas_adjustment",
             parameters = buildJsonObject {
                 put("p_kas_id", kasId)
-                put("p_amount", amount)
-                put("p_reason", reason)
+                put("p_balance_change", amount)
+                put("p_description", reason)
             }
         )
     }

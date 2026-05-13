@@ -28,7 +28,7 @@ class ProductViewModel(private val repository: ProductRepository = ProductReposi
         viewModelScope.launch {
             _uiState.value = ProductUiState.Loading
             try {
-                val products = repository.getProducts()
+                val products = repository.getProducts().filter { it.is_active }
                 _uiState.value = ProductUiState.Success(products)
             } catch (e: Exception) {
                 _uiState.value = ProductUiState.Error(e.message ?: "Failed to load products")

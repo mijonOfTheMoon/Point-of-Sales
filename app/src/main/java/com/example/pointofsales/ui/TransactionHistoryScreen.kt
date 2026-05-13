@@ -21,30 +21,21 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import com.example.pointofsales.model.TransactionWithItems
 import com.example.pointofsales.viewmodel.SalesViewModel
-import com.example.pointofsales.viewmodel.KasViewModel
-import com.example.pointofsales.viewmodel.KasUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionHistoryScreen(
     salesViewModel: SalesViewModel,
-    kasViewModel: KasViewModel,
     onBack: () -> Unit
 ) {
     val transactions by salesViewModel.transactions.collectAsStateWithLifecycle()
-    val kasState by kasViewModel.uiState.collectAsStateWithLifecycle()
 
     val formatter = remember {
         rupiahFormatter()
     }
 
-    LaunchedEffect(kasState) {
-        if (kasState is KasUiState.Success) {
-            val kasList = (kasState as KasUiState.Success).kasList.filter { it.is_active }
-            if (kasList.isNotEmpty()) {
-                salesViewModel.loadTransactions(kasList.first().id ?: "")
-            }
-        }
+    LaunchedEffect(Unit) {
+        salesViewModel.loadTransactions()
     }
 
     Scaffold(
