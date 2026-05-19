@@ -91,6 +91,23 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
         }
     }
 
+    /**
+     * Re-authenticates with new credentials after a self-update that changed email/password.
+     * Supabase Admin API invalidates the current session token when credentials change,
+     * so we must sign in again with the new credentials to maintain an active session.
+     */
+    fun reAuthenticateAndRefresh(email: String, password: String) {
+        viewModelScope.launch {
+            try {
+                repository.reAuthenticate(email, password)
+                refreshAuthenticatedState()
+            } catch (e: Exception) {
+                // Re-auth failed — credentials may be wrong; force logout for safety
+                _checkState.value = AuthCheckState.Unauthenticated
+            }
+        }
+    }
+
     fun applyCurrentUserSnapshot(user: AdminUser) {
         _checkState.value = AuthCheckState.Authenticated(
             role = user.role,

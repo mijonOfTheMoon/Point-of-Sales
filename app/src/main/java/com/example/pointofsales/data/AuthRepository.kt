@@ -62,10 +62,31 @@ class AuthRepository {
         newEmail: String?,
         newPassword: String?
     ) = withContext(Dispatchers.IO) {
-        val userId = auth.currentSessionOrNull()?.user?.id
+        auth.currentSessionOrNull()?.user?.id
             ?: throw IllegalStateException("No authenticated user")
 
-        userRepository.updateOwnProfile(newName, newEmail, newPassword)
+        val result = userRepository.updateOwnProfile(newName, newEmail, newPassword)
+
+        // Admin API invalidates the current session when password changes.
+        // Re-authenticate silently with the new credentials to keep the session alive.
+        if (!newPassword.isNullOrBlank()) {
+            val loginEmail = newEmail?.takeIf { it.isNotBlank() }
+                ?: auth.currentSessionOrNull()?.user?.email
+                ?: ""
+            auth.signInWith(Email) {
+                this.email = loginEmail
+                this.password = newPassword
+            }
+        }
+
+        result
+    }
+
+    suspend fun reAuthenticate(email: String, password: String) = withContext(Dispatchers.IO) {
+        auth.signInWith(Email) {
+            this.email = email
+            this.password = password
+        }
     }
 
     suspend fun isUserLoggedIn(): Boolean {

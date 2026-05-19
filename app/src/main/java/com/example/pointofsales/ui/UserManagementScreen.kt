@@ -147,8 +147,39 @@ fun UserManagementScreen(
             user = user,
             onDismiss = { userToEdit = null },
             onConfirm = { name, email, password, role ->
-                userViewModel.updateUser(user.id, name, email, password.takeIf { it.isNotBlank() }, role)
-                if (user.id == currentUserId) authViewModel.refreshSessionProfile()
+                val isSelf = user.id == currentUserId
+                val emailChanged = email != user.email
+                val passwordChanged = password.isNotBlank()
+
+                if (isSelf && (emailChanged || passwordChanged)) {
+                    // Credential change on self: Admin API will invalidate the current
+                    // session token. We must re-authenticate with the new credentials.
+                    userViewModel.updateSelf(
+                        id = user.id,
+                        name = name,
+                        email = email,
+                        password = password.takeIf { it.isNotBlank() },
+                        role = role,
+                        onSuccess = {
+                            if (passwordChanged) {
+                                // Re-login with new password (and possibly new email)
+                                val loginEmail = if (emailChanged) email else user.email
+                                authViewModel.reAuthenticateAndRefresh(loginEmail, password)
+                            } else {
+                                // Only email changed - password unknown, cannot re-login.
+                                // Supabase may send a confirmation email; token may still be
+                                // valid briefly. Refresh the profile state.
+                                authViewModel.refreshSessionProfile()
+                            }
+                        }
+                    )
+                } else {
+                    userViewModel.updateUser(
+                        user.id, name, email,
+                        password.takeIf { it.isNotBlank() }, role
+                    )
+                    if (isSelf) authViewModel.refreshSessionProfile()
+                }
                 userToEdit = null
             }
         )
