@@ -7,5 +7,6 @@ data class Customer(
     val id: String? = null,
     val name: String,
     val phone: String,
-    val is_active: Boolean = true
+    val is_active: Boolean = true,
+    val created_at: String? = null
 )

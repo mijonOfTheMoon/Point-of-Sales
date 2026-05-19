@@ -32,6 +32,8 @@ fun ProductScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     var productToEdit by remember { mutableStateOf<Product?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("A-Z") }
     val cs = MaterialTheme.colorScheme
     val fmt = remember { rupiahFormatter() }
 
@@ -66,13 +68,15 @@ fun ProductScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.Inventory, contentDescription = null, tint = cs.onPrimary, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Products", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 val total = (uiState as? ProductUiState.Success)?.products?.size ?: 0
                 val lowStock = (uiState as? ProductUiState.Success)?.products?.count { it.stock <= 5.0 } ?: 0
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SubHeaderStat("Total Items", abbreviateNumber(total), Modifier.weight(1f), cs)
+                    SubHeaderStat("Total Products", abbreviateNumber(total), Modifier.weight(1f), cs)
                     SubHeaderStat("Low Stock", abbreviateNumber(lowStock), Modifier.weight(1f), cs)
                 }
             }
@@ -92,7 +96,26 @@ fun ProductScreen(
                     }
                     is ProductUiState.Success -> {
                         val products = (uiState as ProductUiState.Success).products
+                            .filter { it.name.contains(searchQuery, ignoreCase = true) }
+                            .let { list ->
+                                when (sortBy) {
+                                    "Recent" -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Low Stock" -> list.sortedBy { it.stock }
+                                    else -> list.sortedBy { it.name.lowercase() }
+                                }
+                            }
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+                            item {
+                                SearchSortBar(
+                                    query = searchQuery,
+                                    onQueryChange = { searchQuery = it },
+                                    sortLabel = sortBy,
+                                    sortOptions = listOf("A-Z", "Recent", "Low Stock"),
+                                    onSortChange = { sortBy = it },
+                                    placeholder = "Search products"
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                            }
                             items(products) { product ->
                                 ProductItem(
                                     product = product,

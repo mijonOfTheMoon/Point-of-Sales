@@ -51,6 +51,7 @@ fun SalesScreen(
 
     val isCheckoutMode = remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("A-Z") }
 
     val formatter = remember { rupiahFormatter() }
     val total = remember(cart) { cart.sumOf { it.product.price * it.quantity } }
@@ -61,9 +62,14 @@ fun SalesScreen(
         }.toMap()
     }
 
-    val filteredProducts = remember(products, searchQuery) {
-        if (searchQuery.isBlank()) products
+    val filteredProducts = remember(products, searchQuery, sortBy) {
+        val filtered = if (searchQuery.isBlank()) products
         else products.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        when (sortBy) {
+            "Recent" -> filtered.sortedByDescending { it.created_at.orEmpty() }
+            "Stock" -> filtered.sortedByDescending { it.stock }
+            else -> filtered.sortedBy { it.name.lowercase() }
+        }
     }
 
     if (!isCheckoutMode.value) {
@@ -138,19 +144,13 @@ fun SalesScreen(
                         contentPadding = PaddingValues(bottom = 24.dp)
                     ) {
                         item {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search Items") },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
-                                singleLine = true,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedBorderColor = cs.outlineVariant,
-                                    unfocusedContainerColor = cs.surface,
-                                    focusedContainerColor = cs.surface
-                                )
+                            SearchSortBar(
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                sortLabel = sortBy,
+                                sortOptions = listOf("A-Z", "Recent", "Stock"),
+                                onSortChange = { sortBy = it },
+                                placeholder = "Search items"
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                         }

@@ -3,6 +3,7 @@ package com.example.pointofsales.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pointofsales.data.AuthRepository
+import com.example.pointofsales.model.AdminUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,8 +72,8 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                repository.updateProfile(newName, newEmail, newPassword)
-                refreshAuthenticatedState()
+                val user = repository.updateProfile(newName, newEmail, newPassword)
+                applyCurrentUserSnapshot(user)
                 _uiState.value = AuthUiState.Success("Profile updated successfully!")
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Update failed")
@@ -84,12 +85,28 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
         _uiState.value = AuthUiState.Idle
     }
 
+    fun refreshSessionProfile() {
+        viewModelScope.launch {
+            refreshAuthenticatedState()
+        }
+    }
+
+    fun applyCurrentUserSnapshot(user: AdminUser) {
+        _checkState.value = AuthCheckState.Authenticated(
+            role = user.role,
+            email = user.email,
+            name = user.name,
+            id = user.id
+        )
+    }
+
     private suspend fun refreshAuthenticatedState() {
         val profile = repository.getCurrentUserProfile()
         _checkState.value = AuthCheckState.Authenticated(
             role = profile?.role ?: "cashier",
             email = repository.getUserEmail(),
-            name = profile?.name.orEmpty()
+            name = profile?.name.orEmpty(),
+            id = repository.getUserId()
         )
     }
 }

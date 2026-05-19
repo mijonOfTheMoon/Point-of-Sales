@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,11 +36,13 @@ fun DashboardScreen(
     customerViewModel: CustomerViewModel,
     kasViewModel: KasViewModel,
     productViewModel: ProductViewModel,
+    salesViewModel: SalesViewModel,
     onNavigateToProducts: () -> Unit,
     onNavigateToCustomers: () -> Unit,
     onNavigateToSales: () -> Unit,
     onNavigateToKas: () -> Unit,
     onNavigateToExpenses: () -> Unit,
+    onNavigateToUsers: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
     val dashboardState  by dashboardViewModel.uiState.collectAsStateWithLifecycle()
@@ -47,11 +50,16 @@ fun DashboardScreen(
     val customersState  by customerViewModel.uiState.collectAsStateWithLifecycle()
     val kasState        by kasViewModel.uiState.collectAsStateWithLifecycle()
     val productsState   by productViewModel.uiState.collectAsStateWithLifecycle()
+    val transactions    by salesViewModel.transactions.collectAsStateWithLifecycle()
 
     val role = (authState as? AuthCheckState.Authenticated)?.role  ?: ""
     val name = (authState as? AuthCheckState.Authenticated)?.name  ?: ""
 
     val cs = MaterialTheme.colorScheme
+
+    LaunchedEffect(role) {
+        if (role == "cashier") salesViewModel.loadTransactions()
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -129,11 +137,12 @@ fun DashboardScreen(
                         }
                     }
                     "cashier" -> {
-                        val activeCust   = (customersState as? CustomerUiState.Success)?.customers?.count { it.is_active } ?: 0
-                        val availableKas = (kasState as? KasUiState.Success)?.kasList?.count { it.is_active } ?: 0
+                        val todayPrefix = java.time.LocalDate.now().toString()
+                        val todayTransactions = transactions.filter { it.sold_at.startsWith(todayPrefix) && it.status == "completed" }
+                        val todaySales = todayTransactions.sumOf { it.total }
                         HeaderStatRow(
-                            HeaderStatItem("Active Customers", abbreviateNumber(activeCust), Icons.Default.People),
-                            HeaderStatItem("Available Kas",    abbreviateNumber(availableKas), Icons.Default.AccountBalanceWallet),
+                            HeaderStatItem("Today Sales", "Rp${abbreviateNumber(todaySales)}", Icons.AutoMirrored.Filled.TrendingUp),
+                            HeaderStatItem("Transactions", abbreviateNumber(todayTransactions.size), Icons.Default.Receipt),
                             cs
                         )
                     }
@@ -164,8 +173,11 @@ fun DashboardScreen(
                     }
                     if (role in cashOperationRoles) {
                         add(MenuDef("Customers", "Customer records", Icons.Default.People, cs.secondary, cs.primary, onNavigateToCustomers))
-                        add(MenuDef("Kas", "Cash management", Icons.Default.AccountBalanceWallet, cs.secondary, cs.primary, onNavigateToKas))
+                        add(MenuDef("Kas", "Kas records", Icons.Default.AccountBalanceWallet, cs.secondary, cs.primary, onNavigateToKas))
                         add(MenuDef("Expenses", "Record expenses", Icons.Default.Payments, cs.secondary, cs.primary, onNavigateToExpenses))
+                    }
+                    if (role == "admin") {
+                        add(MenuDef("Users", "Manage access", Icons.Default.ManageAccounts, cs.secondary, cs.primary, onNavigateToUsers))
                     }
                 }
 

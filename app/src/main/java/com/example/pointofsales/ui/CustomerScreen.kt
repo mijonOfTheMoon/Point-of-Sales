@@ -29,6 +29,8 @@ fun CustomerScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     var customerToEdit by remember { mutableStateOf<Customer?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("A-Z") }
     val cs = MaterialTheme.colorScheme
 
     Scaffold(
@@ -88,7 +90,26 @@ fun CustomerScreen(
                     }
                     is CustomerUiState.Success -> {
                         val customers = (uiState as CustomerUiState.Success).customers
+                            .filter { it.name.contains(searchQuery, true) || it.phone.contains(searchQuery, true) }
+                            .let { list ->
+                                when (sortBy) {
+                                    "Recent" -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Status" -> list.sortedWith(compareByDescending<Customer> { it.is_active }.thenBy { it.name.lowercase() })
+                                    else -> list.sortedBy { it.name.lowercase() }
+                                }
+                            }
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+                            item {
+                                SearchSortBar(
+                                    query = searchQuery,
+                                    onQueryChange = { searchQuery = it },
+                                    sortLabel = sortBy,
+                                    sortOptions = listOf("A-Z", "Recent", "Status"),
+                                    onSortChange = { sortBy = it },
+                                    placeholder = "Search customers"
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                            }
                             items(customers) { customer ->
                                 CustomerItem(
                                     customer = customer,

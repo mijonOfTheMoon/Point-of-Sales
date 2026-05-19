@@ -33,6 +33,8 @@ fun KasScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAdjustSheet by remember { mutableStateOf<Kas?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("A-Z") }
     val cs = MaterialTheme.colorScheme
     val fmt = remember { rupiahFormatter() }
 
@@ -57,7 +59,7 @@ fun KasScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cash Management", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
+                    Text("Kas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 val totalBalance = (uiState as? KasUiState.Success)?.kasList?.filter { it.is_active }?.sumOf { it.balance } ?: 0.0
@@ -83,7 +85,27 @@ fun KasScreen(
                     }
                     is KasUiState.Success -> {
                         val list = (uiState as KasUiState.Success).kasList
+                            .filter { it.name.contains(searchQuery, true) }
+                            .let { list ->
+                                when (sortBy) {
+                                    "Recent" -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Balance" -> list.sortedByDescending { it.balance }
+                                    "Status" -> list.sortedWith(compareByDescending<Kas> { it.is_active }.thenBy { it.name.lowercase() })
+                                    else -> list.sortedBy { it.name.lowercase() }
+                                }
+                            }
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+                            item {
+                                SearchSortBar(
+                                    query = searchQuery,
+                                    onQueryChange = { searchQuery = it },
+                                    sortLabel = sortBy,
+                                    sortOptions = listOf("A-Z", "Recent", "Balance", "Status"),
+                                    onSortChange = { sortBy = it },
+                                    placeholder = "Search kas"
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                            }
                             items(list) { kas ->
                                 KasItem(
                                     kas = kas,

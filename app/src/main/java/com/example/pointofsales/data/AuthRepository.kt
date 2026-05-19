@@ -14,6 +14,7 @@ import kotlinx.serialization.json.put
 class AuthRepository {
     private val client = SupabaseClientProvider.client
     private val auth = client.auth
+    private val userRepository = UserRepository()
 
     suspend fun signUp(name: String, email: String, password: String) = withContext(Dispatchers.IO) {
         auth.signUpWith(Email) {
@@ -52,6 +53,10 @@ class AuthRepository {
         return auth.currentSessionOrNull()?.user?.email ?: ""
     }
 
+    fun getUserId(): String {
+        return auth.currentSessionOrNull()?.user?.id ?: ""
+    }
+
     suspend fun updateProfile(
         newName: String?,
         newEmail: String?,
@@ -60,21 +65,7 @@ class AuthRepository {
         val userId = auth.currentSessionOrNull()?.user?.id
             ?: throw IllegalStateException("No authenticated user")
 
-        if (!newName.isNullOrBlank()) {
-            client.postgrest.from("profiles").update(
-                { set("name", newName) }
-            ) {
-                filter { eq("id", userId) }
-            }
-        }
-
-        if (!newEmail.isNullOrBlank()) {
-            auth.updateUser { email = newEmail }
-        }
-
-        if (!newPassword.isNullOrBlank()) {
-            auth.updateUser { password = newPassword }
-        }
+        userRepository.updateOwnProfile(newName, newEmail, newPassword)
     }
 
     suspend fun isUserLoggedIn(): Boolean {

@@ -37,6 +37,8 @@ fun ExpenseScreen(
     val uiState by expenseViewModel.uiState.collectAsStateWithLifecycle()
     val kasState by kasViewModel.uiState.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("Recent") }
     val cs = MaterialTheme.colorScheme
     val fmt = remember { rupiahFormatter() }
 
@@ -98,7 +100,27 @@ fun ExpenseScreen(
                     }
                     is ExpenseUiState.Success -> {
                         val list = (uiState as ExpenseUiState.Success).expenses
+                            .filter { it.description.contains(searchQuery, true) || it.status.contains(searchQuery, true) }
+                            .let { list ->
+                                when (sortBy) {
+                                    "A-Z" -> list.sortedBy { it.description.lowercase() }
+                                    "Amount" -> list.sortedByDescending { it.amount }
+                                    "Status" -> list.sortedWith(compareBy<Expense> { it.status }.thenByDescending { it.created_at.orEmpty() })
+                                    else -> list.sortedByDescending { it.created_at.orEmpty() }
+                                }
+                            }
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+                            item {
+                                SearchSortBar(
+                                    query = searchQuery,
+                                    onQueryChange = { searchQuery = it },
+                                    sortLabel = sortBy,
+                                    sortOptions = listOf("Recent", "A-Z", "Amount", "Status"),
+                                    onSortChange = { sortBy = it },
+                                    placeholder = "Search expenses"
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                            }
                             items(list) { expense ->
                                 ExpenseItem(expense = expense, fmt = fmt, onCancel = { expenseViewModel.cancelExpense(it.id ?: "") })
                             }

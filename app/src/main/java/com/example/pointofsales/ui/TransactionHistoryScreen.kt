@@ -1,11 +1,13 @@
 package com.example.pointofsales.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,58 +35,99 @@ fun TransactionHistoryScreen(
     val formatter = remember {
         rupiahFormatter()
     }
+    var searchQuery by remember { mutableStateOf("") }
+    var sortBy by remember { mutableStateOf("Recent") }
+
+    val filteredTransactions = remember(transactions, searchQuery, sortBy) {
+        transactions
+            .filter { transaction ->
+                val customerMatch = transaction.customer?.name?.contains(searchQuery, true) == true
+                val itemMatch = transaction.transaction_item.any { it.product_name.contains(searchQuery, true) }
+                searchQuery.isBlank() || customerMatch || itemMatch || transaction.status.contains(searchQuery, true)
+            }
+            .let { list ->
+                when (sortBy) {
+                    "A-Z" -> list.sortedBy { it.customer?.name.orEmpty().lowercase() }
+                    "Total" -> list.sortedByDescending { it.total }
+                    "Status" -> list.sortedWith(compareBy<TransactionWithItems> { it.status }.thenByDescending { it.sold_at })
+                    else -> list.sortedByDescending { it.sold_at }
+                }
+            }
+    }
 
     LaunchedEffect(Unit) {
         salesViewModel.loadTransactions()
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Transaction History", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
+        modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0)
     ) { innerPadding ->
-        if (transactions.isEmpty()) {
-            Box(
+        val cs = MaterialTheme.colorScheme
+        Column(
+            modifier = Modifier
+                .padding(bottom = innerPadding.calculateBottomPadding())
+                .fillMaxSize()
+        ) {
+            Column(
                 modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .background(cs.primary)
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .padding(horizontal = 24.dp, vertical = 24.dp)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "No transactions yet",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Successful transactions will appear here",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Icons.Default.History, contentDescription = null, tint = cs.onPrimary, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Transaction History", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                val total = transactions.filter { it.status == "completed" }.sumOf { it.total }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SubHeaderStat("Transactions", abbreviateNumber(transactions.size), Modifier.weight(1f), cs)
+                    SubHeaderStat("Total Sales", "Rp${abbreviateNumber(total)}", Modifier.weight(1f), cs)
                 }
             }
-        } else {
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .background(cs.primaryContainer)
                     .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(bottom = 16.dp),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item { Spacer(modifier = Modifier.height(4.dp)) }
-                items(transactions) { transaction ->
-                    TransactionCard(transaction = transaction, formatter = formatter)
+                item {
+                    SearchSortBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        sortLabel = sortBy,
+                        sortOptions = listOf("Recent", "A-Z", "Total", "Status"),
+                        onSortChange = { sortBy = it },
+                        placeholder = "Search history"
+                    )
+                }
+                if (filteredTransactions.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(180.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (transactions.isEmpty()) "No transactions yet" else "No matching transactions",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = cs.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    items(filteredTransactions) { transaction ->
+                        TransactionCard(transaction = transaction, formatter = formatter)
+                    }
                 }
             }
         }
@@ -108,9 +151,9 @@ private fun TransactionCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier

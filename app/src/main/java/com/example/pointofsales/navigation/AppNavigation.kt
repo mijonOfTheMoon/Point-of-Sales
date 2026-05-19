@@ -74,17 +74,20 @@ fun AppNavigation() {
                 val customerViewModel: CustomerViewModel = viewModel()
                 val kasViewModel: KasViewModel = viewModel()
                 val productViewModel: ProductViewModel = viewModel()
+                val salesViewModel: SalesViewModel = viewModel()
                 DashboardScreen(
                     authViewModel = authViewModel,
                     dashboardViewModel = dashboardViewModel,
                     customerViewModel = customerViewModel,
                     kasViewModel = kasViewModel,
                     productViewModel = productViewModel,
+                    salesViewModel = salesViewModel,
                     onNavigateToProducts = { backStack.add(Screen.Products) },
                     onNavigateToCustomers = { backStack.add(Screen.Customers) },
                     onNavigateToSales = { backStack.add(Screen.Sales) },
                     onNavigateToKas = { backStack.add(Screen.Kas) },
                     onNavigateToExpenses = { backStack.add(Screen.Expenses) },
+                    onNavigateToUsers = { backStack.add(Screen.Users) },
                     onNavigateToProfile = { backStack.add(Screen.Profile) },
                 )
             }
@@ -130,6 +133,14 @@ fun AppNavigation() {
                     onBack = { backStack.removeLastOrNull() }
                 )
             }
+            entry<Screen.Users> {
+                val userViewModel: UserViewModel = viewModel()
+                UserManagementScreen(
+                    userViewModel = userViewModel,
+                    authViewModel = authViewModel,
+                    onBack = { backStack.removeLastOrNull() }
+                )
+            }
             entry<Screen.TransactionHistory> {
                 val salesViewModel: SalesViewModel = viewModel()
                 TransactionHistoryScreen(
@@ -155,6 +166,7 @@ private fun Screen.requiresAuthentication(): Boolean = when (this) {
     Screen.Sales,
     Screen.Kas,
     Screen.Expenses,
+    Screen.Users,
     Screen.TransactionHistory,
     Screen.Profile -> true
     Screen.Login,

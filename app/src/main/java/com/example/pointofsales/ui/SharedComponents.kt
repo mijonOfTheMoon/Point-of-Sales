@@ -3,8 +3,12 @@ package com.example.pointofsales.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,5 +61,70 @@ fun rupiahFormatter(): NumberFormat {
             .build()
     ).apply {
         maximumFractionDigits = 0
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchSortBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    sortLabel: String,
+    sortOptions: List<String>,
+    onSortChange: (String) -> Unit,
+    placeholder: String = "Search"
+) {
+    val cs = MaterialTheme.colorScheme
+    val expanded = remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            placeholder = { Text(placeholder, style = MaterialTheme.typography.bodySmall) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            modifier = Modifier.weight(1f).height(52.dp),
+            shape = RoundedCornerShape(18.dp),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodySmall,
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = cs.outlineVariant.copy(alpha = 0.35f),
+                focusedBorderColor = cs.primary.copy(alpha = 0.55f),
+                unfocusedContainerColor = cs.surface,
+                focusedContainerColor = cs.surface
+            )
+        )
+
+        ExposedDropdownMenuBox(
+            expanded = expanded.value,
+            onExpandedChange = { expanded.value = it }
+        ) {
+            OutlinedButton(
+                onClick = { expanded.value = true },
+                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).height(52.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = cs.surface)
+            ) {
+                Text(sortLabel, style = MaterialTheme.typography.labelMedium)
+            }
+            ExposedDropdownMenu(
+                expanded = expanded.value,
+                onDismissRequest = { expanded.value = false }
+            ) {
+                sortOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onSortChange(option)
+                            expanded.value = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
