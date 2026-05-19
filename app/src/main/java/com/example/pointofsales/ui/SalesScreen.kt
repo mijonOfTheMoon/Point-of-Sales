@@ -452,10 +452,6 @@ fun SalesScreen(
         }
     }
 
-
-
-
-
     if (uiState is SalesUiState.Success) {
         AlertDialog(
             onDismissRequest = { },
