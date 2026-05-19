@@ -68,8 +68,6 @@ fun ProductScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.Inventory, contentDescription = null, tint = cs.onPrimary, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Products", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -99,7 +97,7 @@ fun ProductScreen(
                             .filter { it.name.contains(searchQuery, ignoreCase = true) }
                             .let { list ->
                                 when (sortBy) {
-                                    "Recent" -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Recent" -> list.sortedByDescending { recentTimestamp(it.updated_at, it.created_at) }
                                     "Low Stock" -> list.sortedBy { it.stock }
                                     else -> list.sortedBy { it.name.lowercase() }
                                 }

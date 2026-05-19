@@ -11,7 +11,8 @@ data class Expense(
     val amount: Double,
     val kas_id: String,
     val status: String = "active",
-    val created_at: String? = null
+    val created_at: String? = null,
+    val updated_at: String? = null
 ) {
     val is_cancelled: Boolean
         get() = status == "cancelled"

@@ -105,8 +105,8 @@ fun ExpenseScreen(
                                 when (sortBy) {
                                     "A-Z" -> list.sortedBy { it.description.lowercase() }
                                     "Amount" -> list.sortedByDescending { it.amount }
-                                    "Status" -> list.sortedWith(compareBy<Expense> { it.status }.thenByDescending { it.created_at.orEmpty() })
-                                    else -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Status" -> list.sortedWith(compareBy<Expense> { it.status }.thenByDescending { recentTimestamp(it.updated_at, it.created_at) })
+                                    else -> list.sortedByDescending { recentTimestamp(it.updated_at, it.created_at) }
                                 }
                             }
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp)) {

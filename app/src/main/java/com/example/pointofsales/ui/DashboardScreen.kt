@@ -58,6 +58,11 @@ fun DashboardScreen(
     val cs = MaterialTheme.colorScheme
 
     LaunchedEffect(role) {
+        if (role in dashboardSummaryRoles) {
+            dashboardViewModel.loadSummary()
+        } else {
+            dashboardViewModel.clearSummary()
+        }
         if (role == "cashier") salesViewModel.loadTransactions()
     }
 
@@ -119,6 +124,7 @@ fun DashboardScreen(
                 when (role) {
                     "admin", "supervisor" -> {
                         when (val state = dashboardState) {
+                            is DashboardUiState.Idle,
                             is DashboardUiState.Loading ->
                                 Box(
                                     modifier = Modifier.fillMaxWidth().height(80.dp),
@@ -209,6 +215,7 @@ private fun greeting(): String {
 private val salesRoles = setOf("admin", "supervisor", "cashier")
 private val productRoles = setOf("admin", "supervisor", "stocker")
 private val cashOperationRoles = setOf("admin", "supervisor", "cashier")
+private val dashboardSummaryRoles = setOf("admin", "supervisor")
 
 private data class HeaderStatItem(val label: String, val value: String, val icon: ImageVector)
 private data class MenuDef(val title: String, val subtitle: String, val icon: ImageVector, val iconBg: Color, val iconTint: Color, val onClick: () -> Unit)

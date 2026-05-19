@@ -11,7 +11,9 @@ data class Transaction(
     val total: Double,
     val paid: Double,
     val change_amount: Double,
-    val status: String
+    val status: String,
+    val created_at: String? = null,
+    val updated_at: String? = null
 )
 
 @Serializable
@@ -30,6 +32,8 @@ data class TransactionWithItems(
     val paid: Double,
     val change_amount: Double,
     val status: String,
+    val created_at: String? = null,
+    val updated_at: String? = null,
     val transaction_item: List<TransactionItemDetail>
 )
 

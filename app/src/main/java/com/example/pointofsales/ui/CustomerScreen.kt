@@ -93,7 +93,7 @@ fun CustomerScreen(
                             .filter { it.name.contains(searchQuery, true) || it.phone.contains(searchQuery, true) }
                             .let { list ->
                                 when (sortBy) {
-                                    "Recent" -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Recent" -> list.sortedByDescending { recentTimestamp(it.updated_at, it.created_at) }
                                     "Status" -> list.sortedWith(compareByDescending<Customer> { it.is_active }.thenBy { it.name.lowercase() })
                                     else -> list.sortedBy { it.name.lowercase() }
                                 }

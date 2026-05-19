@@ -99,7 +99,7 @@ fun UserManagementScreen(
                             .filter { it.name.contains(query, true) || it.email.contains(query, true) || it.role.contains(query, true) }
                             .let { list ->
                                 when (sort) {
-                                    "Recent" -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Recent" -> list.sortedByDescending { recentTimestamp(it.updated_at, it.created_at) }
                                     "Role" -> list.sortedWith(compareBy<AdminUser> { it.role }.thenBy { it.name.lowercase() })
                                     else -> list.sortedBy { it.name.lowercase() }
                                 }

@@ -1,9 +1,11 @@
 package com.example.pointofsales.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -53,6 +55,10 @@ fun abbreviateNumber(value: Double): String {
 fun abbreviateNumber(value: Long): String = abbreviateNumber(value.toDouble())
 fun abbreviateNumber(value: Int): String = abbreviateNumber(value.toDouble())
 
+fun recentTimestamp(updatedAt: String?, createdAt: String? = null, fallback: String? = null): String {
+    return updatedAt ?: createdAt ?: fallback.orEmpty()
+}
+
 fun rupiahFormatter(): NumberFormat {
     return NumberFormat.getCurrencyInstance(
         Locale.Builder()
@@ -76,6 +82,8 @@ fun SearchSortBar(
 ) {
     val cs = MaterialTheme.colorScheme
     val expanded = remember { mutableStateOf(false) }
+    val fieldBorderColor = cs.outlineVariant.copy(alpha = 0.50f)
+    val activeBorderColor = cs.primary.copy(alpha = 0.65f)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -85,15 +93,15 @@ fun SearchSortBar(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChange,
-            placeholder = { Text(placeholder, style = MaterialTheme.typography.bodySmall) },
+            placeholder = { Text(placeholder, style = MaterialTheme.typography.bodyMedium) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
             modifier = Modifier.weight(1f).height(52.dp),
             shape = RoundedCornerShape(18.dp),
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodySmall,
+            textStyle = MaterialTheme.typography.bodyMedium,
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = cs.outlineVariant.copy(alpha = 0.35f),
-                focusedBorderColor = cs.primary.copy(alpha = 0.55f),
+                unfocusedBorderColor = fieldBorderColor,
+                focusedBorderColor = activeBorderColor,
                 unfocusedContainerColor = cs.surface,
                 focusedContainerColor = cs.surface
             )
@@ -105,11 +113,28 @@ fun SearchSortBar(
         ) {
             OutlinedButton(
                 onClick = { expanded.value = true },
-                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).height(52.dp),
+                modifier = Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .width(124.dp)
+                    .height(52.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.outlinedButtonColors(containerColor = cs.surface)
+                border = BorderStroke(1.dp, if (expanded.value) activeBorderColor else fieldBorderColor),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = cs.surface),
+                contentPadding = PaddingValues(horizontal = 12.dp)
             ) {
-                Text(sortLabel, style = MaterialTheme.typography.labelMedium)
+                Icon(
+                    Icons.Default.FilterList,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = cs.primary
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    sortLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
             ExposedDropdownMenu(
                 expanded = expanded.value,

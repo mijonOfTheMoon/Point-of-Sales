@@ -86,6 +86,7 @@ class UserRepository {
             name = optString("name"),
             role = optString("role", "cashier"),
             created_at = nullableString("created_at"),
+            updated_at = nullableString("updated_at"),
             last_sign_in_at = nullableString("last_sign_in_at")
         )
     }

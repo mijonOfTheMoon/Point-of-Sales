@@ -24,6 +24,7 @@ import com.example.pointofsales.model.Kas
 import com.example.pointofsales.viewmodel.KasUiState
 import com.example.pointofsales.viewmodel.KasViewModel
 import java.text.NumberFormat
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,7 +89,7 @@ fun KasScreen(
                             .filter { it.name.contains(searchQuery, true) }
                             .let { list ->
                                 when (sortBy) {
-                                    "Recent" -> list.sortedByDescending { it.created_at.orEmpty() }
+                                    "Recent" -> list.sortedByDescending { recentTimestamp(it.updated_at, it.created_at) }
                                     "Balance" -> list.sortedByDescending { it.balance }
                                     "Status" -> list.sortedWith(compareByDescending<Kas> { it.is_active }.thenBy { it.name.lowercase() })
                                     else -> list.sortedBy { it.name.lowercase() }
@@ -125,8 +126,12 @@ fun KasScreen(
         KasAdjustSheet(
             kas = kas,
             onDismiss = { showAdjustSheet = null },
-            onConfirm = { amount, reason ->
-                viewModel.manualAdjustment(kas.id ?: "", amount, reason)
+            onConfirm = { newBalance, reason ->
+                val balanceChange = newBalance - kas.balance
+                val description = reason.ifBlank {
+                    "Balance edited from ${kas.balance.toAmountInput()} to ${newBalance.toAmountInput()}"
+                }
+                viewModel.manualAdjustment(kas.id ?: "", balanceChange, description)
                 showAdjustSheet = null
             }
         )
@@ -192,23 +197,34 @@ fun KasAdjustSheet(
     onDismiss: () -> Unit,
     onConfirm: (Double, String) -> Unit
 ) {
-    var amount by remember { mutableStateOf("") }
+    var amount by remember(kas.id, kas.balance) { mutableStateOf(kas.balance.toAmountInput()) }
     var reason by remember { mutableStateOf("") }
     val cs = MaterialTheme.colorScheme
+    val newBalance = amount.toDoubleOrNull()
+    val isValidBalance = newBalance != null && newBalance >= 0.0 && abs(newBalance - kas.balance) > 0.000001
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = cs.surface, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text("Adjust - ${kas.name}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
+            Text("Edit - ${kas.name}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Use a negative value to deduct balance.", style = MaterialTheme.typography.bodySmall, color = cs.onSurface.copy(alpha = 0.45f))
+            Text("Set the final balance for this kas.", style = MaterialTheme.typography.bodySmall, color = cs.onSurface.copy(alpha = 0.45f))
             Spacer(modifier = Modifier.height(20.dp))
             OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount") }, leadingIcon = { Icon(Icons.Default.AttachMoney, null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(value = reason, onValueChange = { reason = it }, label = { Text("Reason") }, leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = { onConfirm(amount.toDoubleOrNull() ?: 0.0, reason) }, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp)) {
-                Text("Confirm Adjustment", style = MaterialTheme.typography.titleSmall)
+            Button(
+                onClick = { newBalance?.let { onConfirm(it, reason) } },
+                enabled = isValidBalance,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Save Balance", style = MaterialTheme.typography.titleSmall)
             }
         }
     }
+}
+
+private fun Double.toAmountInput(): String {
+    return if (this % 1.0 == 0.0) this.toLong().toString() else this.toString()
 }

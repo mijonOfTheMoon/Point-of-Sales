@@ -9,5 +9,6 @@ data class Product(
     val price: Double,
     val stock: Double,
     val is_active: Boolean = true,
-    val created_at: String? = null
+    val created_at: String? = null,
+    val updated_at: String? = null
 )

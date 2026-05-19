@@ -70,7 +70,8 @@ fun AppNavigation() {
                 )
             }
             entry<Screen.Dashboard> {
-                val dashboardViewModel: DashboardViewModel = viewModel()
+                val userId = (checkState as? AuthCheckState.Authenticated)?.id.orEmpty()
+                val dashboardViewModel: DashboardViewModel = viewModel(key = "dashboard-$userId")
                 val customerViewModel: CustomerViewModel = viewModel()
                 val kasViewModel: KasViewModel = viewModel()
                 val productViewModel: ProductViewModel = viewModel()

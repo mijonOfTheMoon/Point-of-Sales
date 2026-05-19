@@ -66,7 +66,7 @@ fun SalesScreen(
         val filtered = if (searchQuery.isBlank()) products
         else products.filter { it.name.contains(searchQuery, ignoreCase = true) }
         when (sortBy) {
-            "Recent" -> filtered.sortedByDescending { it.created_at.orEmpty() }
+            "Recent" -> filtered.sortedByDescending { recentTimestamp(it.updated_at, it.created_at) }
             "Stock" -> filtered.sortedByDescending { it.stock }
             else -> filtered.sortedBy { it.name.lowercase() }
         }

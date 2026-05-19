@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,8 +48,8 @@ fun TransactionHistoryScreen(
                 when (sortBy) {
                     "A-Z" -> list.sortedBy { it.customer?.name.orEmpty().lowercase() }
                     "Total" -> list.sortedByDescending { it.total }
-                    "Status" -> list.sortedWith(compareBy<TransactionWithItems> { it.status }.thenByDescending { it.sold_at })
-                    else -> list.sortedByDescending { it.sold_at }
+                    "Status" -> list.sortedWith(compareBy<TransactionWithItems> { it.status }.thenByDescending { recentTimestamp(it.updated_at, it.created_at, it.sold_at) })
+                    else -> list.sortedByDescending { recentTimestamp(it.updated_at, it.created_at, it.sold_at) }
                 }
             }
     }
@@ -80,8 +79,6 @@ fun TransactionHistoryScreen(
                     IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onPrimary, modifier = Modifier.size(24.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.History, contentDescription = null, tint = cs.onPrimary, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Transaction History", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, color = cs.onPrimary)
                 }

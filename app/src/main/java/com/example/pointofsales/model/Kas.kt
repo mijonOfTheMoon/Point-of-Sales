@@ -8,5 +8,6 @@ data class Kas(
     val name: String,
     val balance: Double = 0.0,
     val is_active: Boolean = true,
-    val created_at: String? = null
+    val created_at: String? = null,
+    val updated_at: String? = null
 )
