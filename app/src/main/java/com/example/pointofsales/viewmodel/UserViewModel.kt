@@ -63,8 +63,9 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
 
     /**
      * Updates the currently logged-in admin's own record.
-     * Provides an [onSuccess] callback so the caller can trigger re-authentication
-     * after the Admin API invalidates the current session token.
+     * Provides an [onSuccess] callback that receives the updated [AdminUser]
+     * from the server response so the caller can apply it directly to the
+     * auth state without a separate DB round-trip.
      */
     fun updateSelf(
         id: String,
@@ -72,7 +73,7 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
         email: String,
         password: String?,
         role: String,
-        onSuccess: () -> Unit
+        onSuccess: (AdminUser) -> Unit
     ) {
         if (id.isBlank()) {
             _uiState.value = UserUiState.Error("User id is missing")
@@ -80,8 +81,7 @@ class UserViewModel(private val repository: UserRepository = UserRepository()) :
         }
         viewModelScope.launch {
             try {
-                repository.updateUser(id, name, email, password, role)
-                onSuccess()
+                onSuccess(repository.updateUser(id, name, email, password, role))
                 loadUsers()
             } catch (e: Exception) {
                 _uiState.value = UserUiState.Error(e.message ?: "Failed to update user")

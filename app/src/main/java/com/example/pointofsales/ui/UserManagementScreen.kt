@@ -1,4 +1,4 @@
-package com.example.pointofsales.ui
+﻿package com.example.pointofsales.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -148,28 +148,27 @@ fun UserManagementScreen(
             onDismiss = { userToEdit = null },
             onConfirm = { name, email, password, role ->
                 val isSelf = user.id == currentUserId
-                val emailChanged = email != user.email
-                val passwordChanged = password.isNotBlank()
-
-                if (isSelf && (emailChanged || passwordChanged)) {
-                    // Credential change on self: Admin API will invalidate the current
-                    // session token. We must re-authenticate with the new credentials.
+                if (isSelf) {
+                    // Use updateSelf() for all self-edits. The callback receives the
+                    // AdminUser from the server response and applies it directly to the
+                    // auth state - no second DB round-trip needed. This mirrors exactly
+                    // what ProfileScreen.updateProfile() does with applyCurrentUserSnapshot().
+                    val emailChanged = email != user.email
+                    val passwordChanged = password.isNotBlank()
                     userViewModel.updateSelf(
                         id = user.id,
                         name = name,
                         email = email,
                         password = password.takeIf { it.isNotBlank() },
                         role = role,
-                        onSuccess = {
+                        onSuccess = { updatedUser ->
+                            // Set auth state directly from the server response
+                            authViewModel.applyCurrentUserSnapshot(updatedUser)
                             if (passwordChanged) {
-                                // Re-login with new password (and possibly new email)
+                                // Credential changed: Admin API invalidated the old token.
+                                // Re-login with new credentials to restore session.
                                 val loginEmail = if (emailChanged) email else user.email
                                 authViewModel.reAuthenticateAndRefresh(loginEmail, password)
-                            } else {
-                                // Only email changed - password unknown, cannot re-login.
-                                // Supabase may send a confirmation email; token may still be
-                                // valid briefly. Refresh the profile state.
-                                authViewModel.refreshSessionProfile()
                             }
                         }
                     )
@@ -178,7 +177,6 @@ fun UserManagementScreen(
                         user.id, name, email,
                         password.takeIf { it.isNotBlank() }, role
                     )
-                    if (isSelf) authViewModel.refreshSessionProfile()
                 }
                 userToEdit = null
             }
