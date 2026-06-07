@@ -1,0 +1,9 @@
+2.3 Fitur yang Dikerjakan Bersama
+
+No   Fitur Bersama          Anggota yang Terlibat        Keterangan
+1    Autentikasi            Semua anggota                Login, register, dan pengecekan sesi
+2    Produk dan Inventory   Hasbi dan Wildan             CRUD produk beserta stok
+3    Transaksi Penjualan    Semua anggota                Keranjang, checkout, dan riwayat transaksi
+4    Dashboard              Hasbi dan Issadurrofiq       Ringkasan penjualan, pengeluaran, dan saldo kas
+5    Profil Pengguna        Hasbi dan Issadurrofiq       Melihat dan mengubah profil sendiri
+6    Manajemen Pengguna     Hasbi                        CRUD akun pengguna oleh admin

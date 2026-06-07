@@ -1,0 +1,21 @@
+LAPORAN AKHIR
+Aplikasi Mobile Android Compose MVVM Supabase
+
+HALAMAN SAMPUL
+
+LAPORAN AKHIR PROYEK
+APLIKASI MOBILE ANDROID COMPOSE MVVM SUPABASE
+
+Mata Kuliah: Pengembangan Aplikasi Mobile Terapan
+Dosen Pengampu: Muhammad Aminul Akbar, S.Kom., M.T.
+Kelompok: 10
+
+No   Nama Mahasiswa                NIM                Modul yang Dikerjakan
+1    Hasbi Mizan Azzami            235150701111025    Modul Manajemen Kas
+2    A. Issadurrofiq Jaya Utama    235150700111023    Modul Pelanggan
+3    A. Wildan Hula Aufa           235150700111013    Modul Pengeluaran
+
+Program Studi: Teknologi Informasi
+Fakultas: Fakultas Ilmu Komputer
+Universitas: Universitas Brawijaya
+Tahun: 2026

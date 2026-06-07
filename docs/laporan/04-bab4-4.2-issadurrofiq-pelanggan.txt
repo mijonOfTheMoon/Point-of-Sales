@@ -1,0 +1,177 @@
+4.2 Anggota 2: A. Issadurrofiq Jaya Utama
+
+4.2.1 Modul yang Dikerjakan
+
+Nama Modul: Pelanggan
+
+4.2.2 Deskripsi Fitur
+
+Fitur ini digunakan untuk mengelola data pelanggan toko yang nantinya bisa ditautkan ke sebuah transaksi penjualan. Tiap pelanggan akan menyimpan nama, nomor telepon, serta status aktif. Sama seperti modul kas, pencatatan dan perubahan datanya tidak dilakukan lewat insert atau update tabel biasa, melainkan lewat RPC supaya aturannya tetap dipegang oleh database.
+
+Fitur yang dikerjakan meliputi:
+1. Menampilkan daftar pelanggan beserta jumlah total dan jumlah yang masih aktif
+2. Mendaftarkan pelanggan baru lewat sebuah bottom sheet
+3. Mengubah nama dan nomor telepon pelanggan
+4. Mengaktifkan dan menonaktifkan pelanggan
+5. Mencari serta mengurutkan pelanggan berdasarkan nama, status, atau yang paling baru
+
+4.2.3 File yang Dikerjakan
+
+No   Nama File                Fungsi File
+1    Customer.kt              Model data pelanggan
+2    CustomerRepository.kt    Mengakses dan mengubah data pelanggan ke Supabase
+3    CustomerViewModel.kt     Mengatur state dan proses data pelanggan
+4    CustomerScreen.kt        Menampilkan halaman daftar dan form pelanggan
+
+4.2.4 Kode Model
+
+Kotlin
+
+@Serializable
+data class Customer(
+    val id: String? = null,
+    val name: String,
+    val phone: String,
+    val is_active: Boolean = true,
+    val created_at: String? = null,
+    val updated_at: String? = null
+)
+
+4.2.5 Penjelasan Kode Model
+
+Model Customer akan memetakan satu baris tabel customer di Supabase, jadi satu instance mewakili satu pelanggan. Anotasi Serializable di atasnya membuat library serialization tahu cara mengubah JSON dari Postgrest menjadi objek Customer, dan tanpa anotasi itu proses decode tidak akan jalan. Field name dan phone menjadi data inti tiap pelanggan, lalu field is_active dipakai sebagai penanda apakah pelanggan tersebut masih aktif atau sudah dinonaktifkan. Penamaan field memakai gaya snake case supaya namanya persis sama dengan kolom di Postgres, sehingga decode-nya berjalan tanpa pemetaan tambahan. Field id, created_at, dan updated_at sengaja dibuat nullable dengan default null, karena pada saat pelanggan baru hendak didaftarkan, ketiga nilai itu belum ada dan baru akan diisi sendiri oleh database.
+
+4.2.6 Kode Repository
+
+Kotlin
+
+class CustomerRepository {
+    private val postgrest = SupabaseClientProvider.client.postgrest
+
+    suspend fun getCustomers(): List<Customer> = withContext(Dispatchers.IO) {
+        postgrest["customer"].select().decodeList<Customer>()
+    }
+
+    suspend fun registerCustomer(name: String, phone: String) = withContext(Dispatchers.IO) {
+        postgrest.rpc(
+            function = "register_customer",
+            parameters = buildJsonObject {
+                put("p_name", name)
+                put("p_phone", phone)
+            }
+        )
+    }
+
+    suspend fun updateCustomer(id: String, name: String, phone: String) = withContext(Dispatchers.IO) {
+        postgrest.rpc(
+            function = "update_customer_profile",
+            parameters = buildJsonObject {
+                put("p_customer_id", id)
+                put("p_name", name)
+                put("p_phone", phone)
+            }
+        )
+    }
+
+...
+
+}
+
+4.2.7 Penjelasan Kode Repository
+
+CustomerRepository menjadi lapisan yang menangani seluruh komunikasi data pelanggan ke Supabase. Di bagian atas, repository menyimpan referensi postgrest dari SupabaseClientProvider supaya semua function bisa memakainya. Seluruh function di sini ditandai suspend, jadi pemanggilannya hanya boleh dari dalam coroutine dan bisa ditunda tanpa memblokir thread. Pembacaan data ditangani getCustomers yang menjalankan select pada tabel customer, lalu hasilnya langsung di-decode menjadi List<Customer> lewat decodeList. Untuk pendaftaran pelanggan baru, registerCustomer memanggil RPC register_customer dan mengirim p_name beserta p_phone lewat buildJsonObject. Perubahan data ditangani updateCustomer yang memanggil RPC update_customer_profile, dan di sinilah p_customer_id berperan sebagai penanda baris pelanggan mana yang akan diubah. Pola serupa dipakai untuk status pelanggan, karena activateCustomer dan deactivateCustomer masing masing memanggil RPC activate_customer dan deactivate_customer dengan hanya mengirim id. Seluruh operasi tadi dibungkus withContext Dispatchers.IO, sebab Dispatchers.IO merupakan thread pool yang memang disiapkan untuk pekerjaan jaringan, sehingga main thread tetap luang dan tampilan tidak ikut tersendat selama menunggu response.
+
+4.2.8 Kode ViewModel
+
+Kotlin
+
+sealed interface CustomerUiState {
+    data object Loading : CustomerUiState
+    data class Success(val customers: List<Customer>) : CustomerUiState
+    data class Error(val message: String) : CustomerUiState
+}
+
+class CustomerViewModel(private val repository: CustomerRepository = CustomerRepository()) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<CustomerUiState>(CustomerUiState.Loading)
+    val uiState: StateFlow<CustomerUiState> = _uiState.asStateFlow()
+
+    init {
+        loadCustomers()
+    }
+
+...
+
+    fun registerCustomer(name: String, phone: String) {
+        viewModelScope.launch {
+            try {
+                repository.registerCustomer(name, phone)
+                loadCustomers()
+            } catch (e: Exception) {
+                _uiState.value = CustomerUiState.Error(e.message ?: "Failed to register customer")
+            }
+        }
+    }
+
+...
+
+}
+
+4.2.9 Penjelasan Penerapan ViewModel
+
+Bentuk tampilan layar diwakili sealed interface CustomerUiState yang punya tiga turunan yaitu Loading, Success, dan Error. Pemilihan sealed interface di sini membuat layar bisa memakai when secara aman, karena seluruh kemungkinan state sudah pasti tertangani. State Success membawa daftar customers, lalu Error membawa pesannya, sehingga datanya menempel langsung ke state-nya.
+
+State tersebut disimpan di dalam _uiState yang bertipe MutableStateFlow. MutableStateFlow merupakan wadah satu nilai yang bisa diamati, jadi begitu nilainya diganti, seluruh pengamatnya langsung diberi tahu. Variabel _uiState dibuat private supaya hanya ViewModel yang boleh mengubahnya, lalu ke luar ViewModel hanya mengekspos uiState lewat asStateFlow yang read only. Dengan begitu layar bisa mengamati state tetapi tidak bisa mengubahnya, dan sumber perubahan state tetap terpusat di ViewModel.
+
+Begitu ViewModel dibuat, blok init langsung memanggil loadCustomers, jadi daftar pelanggan sudah mulai diambil tanpa menunggu aksi pengguna. Tiap operasi tulis di sini mengikuti pola yang sama, dan registerCustomer bisa dijadikan contoh. Alurnya kurang lebih seperti berikut:
+1. Function dijalankan di dalam viewModelScope.launch, yaitu coroutine scope yang umurnya mengikuti ViewModel sehingga aman dari kebocoran.
+2. ViewModel memanggil repository.registerCustomer untuk mengirim data pelanggan baru ke Supabase.
+3. Bila pendaftaran berhasil, ViewModel langsung memanggil loadCustomers lagi supaya daftar terbaru ikut terbaca.
+4. Bila gagal, exception-nya ditangkap lalu _uiState diubah menjadi Error berisi pesannya.
+
+Pemanggilan loadCustomers di akhir itulah yang membuat layar selalu menampilkan data terbaru. loadCustomers akan membaca ulang tabel customer lalu menulis nilai baru ke _uiState, dan karena _uiState bersifat observable, perubahan nilai ini akan mendorong layar menggambar ulang daftarnya tanpa pengguna perlu menyegarkan secara manual.
+
+4.2.10 Kode UI Compose
+
+Kotlin
+
+@Composable
+fun CustomerScreen(
+    viewModel: CustomerViewModel,
+    onBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showAddSheet by remember { mutableStateOf(false) }
+    var customerToEdit by remember { mutableStateOf<Customer?>(null) }
+
+...
+
+    if (showAddSheet) {
+        CustomerSheet(
+            onDismiss = { showAddSheet = false },
+            onConfirm = { name, phone -> viewModel.registerCustomer(name, phone); showAddSheet = false }
+        )
+    }
+    customerToEdit?.let { customer ->
+        CustomerSheet(
+            customer = customer,
+            onDismiss = { customerToEdit = null },
+            onConfirm = { name, phone -> viewModel.updateCustomer(customer.id ?: "", name, phone); customerToEdit = null }
+        )
+    }
+}
+
+4.2.11 Penjelasan Kode UI Compose
+
+CustomerScreen mengambil state dari ViewModel lewat viewModel.uiState.collectAsStateWithLifecycle. Function tersebut mengamati StateFlow lalu membungkus nilainya ke dalam State milik Compose, sehingga begitu state di ViewModel berganti, variabel uiState ikut berganti dan layar otomatis menggambar ulang dirinya. Pengamatan ini hanya aktif selama layar terlihat, jadi sumber daya tidak terbuang ketika layar berada di latar belakang.
+
+Selain state dari ViewModel, layar memegang dua state lokal yang mengatur munculnya bottom sheet. Keduanya dibungkus remember dan mutableStateOf supaya nilainya bertahan saat layar digambar ulang. showAddSheet menjadi penanda apakah form pendaftaran sedang dibuka, lalu customerToEdit menyimpan pelanggan yang sedang diubah dan bernilai null selama belum ada yang dipilih.
+
+Kedua state lokal itulah yang mengarahkan alur form. Ketika showAddSheet bernilai true, CustomerSheet akan muncul dalam keadaan kosong, lalu tombol konfirmasinya memanggil registerCustomer di ViewModel. Begitu pengguna menekan ikon edit pada salah satu baris, customerToEdit akan terisi pelanggan tersebut sehingga CustomerSheet muncul lagi dengan data yang sudah terisi. Pada mode ubah ini, tombol konfirmasinya memanggil updateCustomer dengan membawa id pelanggan yang sedang dibuka. Daftar pelanggannya sendiri digambar lewat LazyColumn yang tiap barisnya memakai composable CustomerItem berisi tombol edit dan Switch status. Setelah pendaftaran maupun perubahan berhasil, ViewModel akan memuat ulang datanya sehingga daftar di layar langsung menyesuaikan tanpa perlu disegarkan manual.
+
+4.2.12 Screenshot Hasil
+
+No   Tampilan                     Screenshot
+1    Halaman Daftar Pelanggan     -
+2    Form Tambah Pelanggan        -
+3    Data Pelanggan di Supabase   -

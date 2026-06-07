@@ -1,0 +1,74 @@
+5.6 Manajemen Pengguna
+
+5.6.1 Deskripsi Fitur
+
+Fitur manajemen pengguna digunakan oleh admin untuk mengelola akun seluruh pengguna aplikasi. Lewat fitur ini admin bisa melihat daftar pengguna, menambah akun baru, mengubah data dan role, sampai menghapus akun. Berbeda dari modul lain yang berbicara langsung ke tabel lewat Postgrest, modul ini berkomunikasi lewat Supabase Edge Function bernama admin-users, karena operasinya menyentuh sisi autentikasi yang tidak boleh diakses sembarangan dari aplikasi.
+
+5.6.2 Anggota yang Terlibat
+
+No   Nama Anggota             Kontribusi
+1    Hasbi Mizan Azzami       Membuat AdminUser, UserRepository, UserViewModel, dan UserManagementScreen
+
+5.6.3 File yang Digunakan
+
+No   Nama File                  Fungsi File
+1    AdminUser.kt               Model data akun pengguna
+2    UserRepository.kt          Memanggil Edge Function admin-users lewat HttpURLConnection
+3    UserViewModel.kt           Mengatur state daftar dan proses akun pengguna
+4    UserManagementScreen.kt    Tampilan daftar dan form pengguna
+
+5.6.4 Kode ViewModel Manajemen Pengguna
+
+Kotlin
+
+class UserViewModel(private val repository: UserRepository = UserRepository()) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<UserUiState>(UserUiState.Loading)
+    val uiState: StateFlow<UserUiState> = _uiState.asStateFlow()
+
+    init {
+        loadUsers()
+    }
+
+    fun loadUsers() {
+        viewModelScope.launch {
+            _uiState.value = UserUiState.Loading
+            try {
+                _uiState.value = UserUiState.Success(repository.getUsers())
+            } catch (e: Exception) {
+                _uiState.value = UserUiState.Error(e.message ?: "Failed to load users")
+            }
+        }
+    }
+
+...
+
+    fun createUser(name: String, email: String, password: String, role: String) {
+        viewModelScope.launch {
+            try {
+                repository.createUser(name, email, password, role)
+                loadUsers()
+            } catch (e: Exception) {
+                _uiState.value = UserUiState.Error(e.message ?: "Failed to create user")
+            }
+        }
+    }
+
+...
+
+}
+
+5.6.5 Penjelasan Penerapan ViewModel Manajemen Pengguna
+
+UserViewModel mengikuti pola yang sama dengan ViewModel lain. Ia menyimpan state lewat _uiState bertipe MutableStateFlow yang private, lalu mengeksposnya ke luar lewat uiState yang read only. Begitu ViewModel dibuat, blok init langsung memanggil loadUsers supaya daftar pengguna segera diambil. Tiap operasi tulis seperti createUser dijalankan di dalam viewModelScope.launch, lalu memanggil loadUsers lagi setelah berhasil supaya daftar di layar ikut menyesuaikan. Karena _uiState bersifat observable, perubahan nilainya akan mendorong UserManagementScreen yang mengamatinya untuk menggambar ulang daftarnya.
+
+Yang membuat modul ini istimewa justru ada di lapisan repository-nya. UserRepository tidak memakai Postgrest seperti modul lain, melainkan membuka HttpURLConnection ke endpoint Edge Function admin-users. Tiap pemanggilannya menyertakan apikey serta header Authorization berisi access token dari sesi yang sedang aktif, sehingga server bisa memastikan yang memanggil memang punya hak. Tujuan operasinya dibedakan lewat field action di dalam payload JSON, mulai dari list untuk mengambil daftar, create untuk menambah, update untuk mengubah, sampai delete untuk menghapus. Respons dari server berupa JSON kemudian diurai secara manual menjadi objek AdminUser lewat sebuah function pembantu. Hal inilah yang membuat AdminUser tidak perlu ditandai Serializable seperti model lain, karena pemetaannya memang dilakukan tangan demi tangan dari JSONObject.
+
+Ada satu kasus khusus yang ditangani lewat updateSelf. Ketika admin mengubah datanya sendiri, perubahan password akan membuat Supabase membatalkan token sesi yang lama, persis seperti yang terjadi pada fitur profil. Untuk itu updateSelf menyediakan sebuah callback yang menerima AdminUser dari respons server, lalu hasilnya dipakai langsung untuk menyegarkan state autentikasi tanpa membaca ulang database. Bila password memang berubah, layar akan meminta AuthViewModel melakukan re-authenticate dengan kredensial baru supaya sesinya tetap hidup. Pembedaan antara updateSelf dan updateUser biasa inilah yang mencegah admin tiba tiba terlempar keluar setelah mengubah akunnya sendiri.
+
+5.6.6 Screenshot Hasil
+
+No   Tampilan                       Screenshot
+1    Halaman Daftar Pengguna        -
+2    Form Tambah Pengguna           -
+3    Data Pengguna di Supabase      -

@@ -1,0 +1,95 @@
+5.3 Transaksi Penjualan
+
+5.3.1 Deskripsi Fitur
+
+Fitur transaksi penjualan menjadi inti dari aplikasi ini karena di sinilah proses jual beli dijalankan. Pengguna akan memilih produk, mengatur jumlahnya di keranjang, lalu masuk ke tahap checkout untuk menentukan kas penerima dan pelanggannya. Saat pembayaran diproses, transaksi tersebut akan langsung tersimpan sekaligus mengurangi stok produk dan menambah saldo kas yang dipilih. Seluruh riwayat transaksinya nantinya bisa ditinjau ulang lewat halaman terpisah.
+
+5.3.2 Anggota yang Terlibat
+
+No   Nama Anggota                  Kontribusi
+1    Hasbi Mizan Azzami            Membuat SalesRepository dan SalesViewModel beserta logika keranjang
+2    A. Issadurrofiq Jaya Utama    Membuat SalesScreen
+3    A. Wildan Hula Aufa           Membuat TransactionHistoryScreen
+
+5.3.3 File yang Digunakan
+
+No   Nama File                     Fungsi File
+1    Transaction.kt                Model transaksi beserta item dan relasinya
+2    TransactionItem.kt            Model input item transaksi
+3    SalesRepository.kt            Mengambil transaksi dan memproses penjualan lewat RPC
+4    SalesViewModel.kt             Mengatur keranjang, produk, dan proses penjualan
+5    SalesScreen.kt                Tampilan kasir dan checkout
+6    TransactionHistoryScreen.kt   Tampilan riwayat transaksi
+
+5.3.4 Kode ViewModel Penjualan
+
+Kotlin
+
+fun addToCart(product: Product, quantity: Double = 1.0) {
+    val productId = product.id ?: return
+    if (quantity == 0.0) return
+    val maxQuantity = product.stock.coerceAtLeast(0.0)
+    if (quantity > 0.0 && maxQuantity <= 0.0) return
+
+    val currentCart = _cart.value.toMutableList()
+    val existingItemIndex = currentCart.indexOfFirst { it.product.id == productId }
+    if (existingItemIndex != -1) {
+        val existingItem = currentCart[existingItemIndex]
+        val updatedQuantity = (existingItem.quantity + quantity).coerceAtMost(maxQuantity)
+        if (updatedQuantity > 0.0) {
+            currentCart[existingItemIndex] = existingItem.copy(quantity = updatedQuantity)
+        } else {
+            currentCart.removeAt(existingItemIndex)
+        }
+    } else if (quantity > 0.0) {
+        currentCart.add(CartItem(product, quantity.coerceAtMost(maxQuantity)))
+    }
+    _cart.value = currentCart
+}
+
+...
+
+fun processSale(kasId: String, customerId: String?, paid: Double) {
+    if (kasId.isBlank()) {
+        _uiState.value = SalesUiState.Error("Kas id is missing")
+        return
+    }
+    if (_cart.value.isEmpty()) {
+        _uiState.value = SalesUiState.Error("Cart is empty")
+        return
+    }
+
+    viewModelScope.launch {
+        _uiState.value = SalesUiState.Loading
+        try {
+            val items = _cart.value.map {
+                val productId = it.product.id
+                    ?: throw IllegalStateException("Cart contains a product without an id")
+                TransactionItemInput(
+                    product_id = productId,
+                    quantity = it.quantity,
+                    price_at_sale = it.product.price
+                )
+            }
+            salesRepository.processSale(kasId, customerId, items, paid)
+            _uiState.value = SalesUiState.Success("Sale processed successfully!")
+            loadProducts()
+            loadTransactions(kasId)
+        } catch (e: Exception) {
+            _uiState.value = SalesUiState.Error(e.message ?: "Failed to process sale")
+        }
+    }
+}
+
+5.3.5 Penjelasan Penerapan ViewModel Penjualan
+
+SalesViewModel sedikit berbeda dari ViewModel lain, sebab ia memegang beberapa aliran state sekaligus. Selain _uiState untuk status proses penjualan, ada pula _cart untuk isi keranjang, _products untuk daftar produk, dan _transactions untuk riwayat transaksi. Masing masing memakai MutableStateFlow yang private lalu diekspos sebagai StateFlow read only, sehingga layar bisa mengamati keranjang dan daftar produk secara terpisah. Pemisahan ini berguna, karena keranjang sering berubah saat pengguna menambah barang, sementara status proses penjualan hanya berubah saat checkout.
+
+Pengelolaan keranjang ditangani addToCart, dan logikanya cukup berhati hati supaya jumlah barang tidak pernah melebihi stok. Alurnya bisa diurutkan seperti berikut:
+1. Function lebih dulu menghitung maxQuantity dari stok produk, lalu memakai coerceAtMost supaya jumlah di keranjang tidak akan pernah melampaui batas stok itu.
+2. Bila produknya sudah ada di keranjang, jumlahnya ditambah dengan tetap dibatasi maxQuantity, lalu item lama diganti lewat copy dengan jumlah yang baru.
+3. Bila jumlah barunya justru turun sampai nol atau kurang, item tersebut dikeluarkan dari keranjang.
+4. Bila produknya belum ada di keranjang, sebuah CartItem baru ditambahkan.
+5. Di akhir, _cart.value diisi dengan daftar keranjang yang baru, dan karena _cart bersifat observable, layar kasir akan langsung menggambar ulang jumlah tiap barang.
+
+Saat checkout, processSale memegang aturan yang lebih ketat. Function ini lebih dulu memastikan kas sudah dipilih dan keranjang tidak kosong. Bila salah satunya tidak terpenuhi, _uiState langsung diisi Error dan proses berhenti sebelum menyentuh jaringan. Setelah lolos pengecekan, ViewModel mengubah _uiState menjadi Loading, lalu memetakan tiap isi keranjang menjadi TransactionItemInput yang membawa product_id, quantity, dan price_at_sale. Daftar item itu kemudian dikirim ke repository lewat RPC process_sale, sehingga database yang akan menyimpan transaksi, mengurangi stok, dan menambah saldo kas dalam satu proses. Begitu berhasil, ViewModel menandai state Success lalu langsung memanggil loadProducts dan loadTransactions. Kedua pemanggilan ulang inilah yang membuat stok terbaru dan riwayat transaksi ikut tersegarkan, sehingga layar yang mengamatinya akan menggambar ulang dirinya tanpa pengguna perlu memuat manual.

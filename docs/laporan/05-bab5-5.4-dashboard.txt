@@ -1,0 +1,56 @@
+5.4 Dashboard
+
+5.4.1 Deskripsi Fitur
+
+Fitur dashboard digunakan untuk menyajikan ringkasan keadaan toko begitu pengguna berhasil login. Ringkasan yang ditampilkan mencakup total penjualan, total pengeluaran, jumlah transaksi, serta saldo kas yang masih aktif. Isi dashboard ini akan menyesuaikan role pengguna, sehingga tampilan untuk admin tidak sama dengan tampilan untuk cashier maupun stocker. Selain ringkasan, halaman ini juga menjadi pusat navigasi karena dari sinilah pengguna berpindah ke menu lain.
+
+5.4.2 Anggota yang Terlibat
+
+No   Nama Anggota                  Kontribusi
+1    Hasbi Mizan Azzami            Membuat DashboardRepository, DashboardViewModel, dan DashboardScreen
+2    A. Issadurrofiq Jaya Utama    Membuat model DashboardSummary
+
+5.4.3 File yang Digunakan
+
+No   Nama File                 Fungsi File
+1    DashboardSummary.kt       Model ringkasan dashboard
+2    DashboardRepository.kt    Mengambil ringkasan lewat RPC get_dashboard_summary
+3    DashboardViewModel.kt     Mengatur state ringkasan dashboard
+4    DashboardScreen.kt        Tampilan ringkasan dan menu navigasi
+
+5.4.4 Kode ViewModel Dashboard
+
+Kotlin
+
+class DashboardViewModel(private val repository: DashboardRepository = DashboardRepository()) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Idle)
+    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    fun loadSummary() {
+        viewModelScope.launch {
+            _uiState.value = DashboardUiState.Loading
+            try {
+                val summary = repository.getDashboardSummary()
+                _uiState.value = DashboardUiState.Success(summary)
+            } catch (e: Exception) {
+                _uiState.value = DashboardUiState.Error(e.message ?: "Failed to load dashboard summary")
+            }
+        }
+    }
+
+...
+
+}
+
+5.4.5 Penjelasan Penerapan ViewModel Dashboard
+
+DashboardViewModel menyimpan state ringkasan lewat _uiState yang bertipe MutableStateFlow, dan seperti biasa nilainya diekspos ke luar lewat uiState yang read only. Yang membedakannya dari ViewModel lain ada pada nilai awalnya, yaitu Idle, bukan Loading. Selain itu ringkasannya juga tidak dimuat di blok init. Keputusan ini diambil karena pemuatan ringkasan bergantung pada role pengguna, jadi memuatnya secara membabi buta saat ViewModel dibuat justru tidak tepat.
+
+Pemuatan baru terjadi ketika layar memanggil loadSummary. Alurnya bisa diurutkan seperti berikut:
+1. _uiState lebih dulu diubah menjadi Loading supaya layar bisa menampilkan indikator memuat di bagian ringkasan.
+2. ViewModel meminta repository menjalankan getDashboardSummary, yang di sisi repository memanggil RPC get_dashboard_summary lalu men-decode hasilnya menjadi satu objek DashboardSummary.
+3. Bila berhasil, objek ringkasan itu dibungkus ke dalam state Success supaya bisa digambar di layar.
+4. Bila gagal, exception-nya ditangkap lalu _uiState diubah menjadi Error berisi pesannya.
+
+Keputusan memanggil loadSummary diatur di DashboardScreen dan memang dibuat sadar role. Pemanggilannya hanya dilakukan ketika role pengguna termasuk admin atau supervisor, karena hanya peran itu yang berhak melihat ringkasan keuangan toko. Untuk role lain seperti cashier dan stocker, ViewModel justru memanggil clearSummary supaya state-nya kembali ke Idle dan angka keuangan tidak ikut ditampilkan. Model DashboardSummary sendiri menyimpan field seperti total_sales_value dan total_active_kas_balance, dan beberapa di antaranya memakai SerialName supaya nama property di Kotlin bisa lebih ringkas daripada nama kolom hasil RPC. Karena _uiState bersifat observable, begitu nilainya berganti menjadi Success, DashboardScreen yang mengamatinya lewat collectAsStateWithLifecycle akan langsung menggambar ulang kartu kartu ringkasannya.

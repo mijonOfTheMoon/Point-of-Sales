@@ -1,0 +1,60 @@
+BAB III
+STRUKTUR APLIKASI
+
+3.1 Struktur Folder Aplikasi
+
+Seluruh kode sumber aplikasi berada di bawah package com.example.pointofsales, lalu dibagi per layer supaya rapi mengikuti pola MVVM. Folder model dipakai untuk menampung seluruh data class yang menjadi bentuk data aplikasi. Folder data berisi repository beserta SupabaseClientProvider yang menjadi pintu masuk ke Supabase. Lapisan logika dan state ditaruh di folder viewmodel, lalu seluruh tampilannya akan tinggal di folder ui bersama komponen bersama dan theme. Perpindahan antar layar sendiri diatur lewat folder navigation, dan semuanya bermuara ke MainActivity.kt yang menjadi entry point lalu memuat AppNavigation.
+
+app/
+└── java/com/example/pointofsales/
+    ├── data/
+    │   ├── AuthRepository.kt
+    │   ├── CustomerRepository.kt
+    │   ├── DashboardRepository.kt
+    │   ├── ExpenseRepository.kt
+    │   ├── KasRepository.kt
+    │   ├── ProductRepository.kt
+    │   ├── SalesRepository.kt
+    │   ├── SupabaseClientProvider.kt
+    │   └── UserRepository.kt
+    ├── model/
+    │   ├── AdminUser.kt
+    │   ├── Customer.kt
+    │   ├── DashboardSummary.kt
+    │   ├── Expense.kt
+    │   ├── Kas.kt
+    │   ├── Product.kt
+    │   ├── Transaction.kt
+    │   ├── TransactionItem.kt
+    │   └── UserProfile.kt
+    ├── navigation/
+    │   ├── AppNavigation.kt
+    │   └── Screen.kt
+    ├── ui/
+    │   ├── CustomerScreen.kt
+    │   ├── DashboardScreen.kt
+    │   ├── ExpenseScreen.kt
+    │   ├── KasScreen.kt
+    │   ├── LoginScreen.kt
+    │   ├── ProductScreen.kt
+    │   ├── ProfileScreen.kt
+    │   ├── RegisterScreen.kt
+    │   ├── SalesScreen.kt
+    │   ├── SharedComponents.kt
+    │   ├── TransactionHistoryScreen.kt
+    │   ├── UserManagementScreen.kt
+    │   └── theme/
+    │       ├── Color.kt
+    │       ├── Theme.kt
+    │       └── Type.kt
+    ├── viewmodel/
+    │   ├── AuthState.kt
+    │   ├── AuthViewModel.kt
+    │   ├── CustomerViewModel.kt
+    │   ├── DashboardViewModel.kt
+    │   ├── ExpenseViewModel.kt
+    │   ├── KasViewModel.kt
+    │   ├── ProductViewModel.kt
+    │   ├── SalesViewModel.kt
+    │   └── UserViewModel.kt
+    └── MainActivity.kt

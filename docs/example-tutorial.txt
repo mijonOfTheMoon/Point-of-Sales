@@ -1,0 +1,44 @@
+Pada halaman login, terdapat field yang perlu diisi oleh pengguna yaitu email dan
+password. Field tersebut terhubung dengan useLoginForm yang berasal dari
+useAuthForm.ts melalui v-model dari vue. Sehingga ketika user mengubah nilai dari
+field, nilai object dalam useLoginForm akan berubah.
+useLoginForm akan sewaktu waktu mengubah nilai dari isFormValid berdasarkan
+validitas field yang diisi oleh user. isFormValid menentukan jika pengguna
+bisa melanjutkan dengan mematikan atau menyalakan tombol submit pada form.
+Ketika user menekan tombol submit, akan dijalankan function berupa handleLogin
+yang tertera dalam section <script>. handleLogin akan melakukan beberapa hal, yaitu:
+1. Mengecek jika isFormValid bernilai true. Jika tidak, maka function akan berhenti
+disini sehingga tidak terjadi apa apa. Pengecekan ini dilakukan untuk memastikan
+pengguna tidak melakukan bypass terhadap pengecekan field dalam form.
+2. Menjalankan serangkaian fungsi dalam blok try-catch:
+2a. 1. Mengubah state tampilan tombol submit menjadi loading dengan mengubah
+nilai isLoading menjadi true
+2. Memanggil function login dari api.ts dengan data email dan password
+secara asinkron
+- login akan memanggil endpoint /api/auth/login dari backend
+menggunakan metode POST
+3. Melakukan pengecekan nilai role yang dikembalikan dari function login. Jika
+role berupa admin, maka akan memunculkan pop-up dengan pesan berupa
+"akun ini bukan akun peserta" melalui showErrorPopup kemudian
+menghentikan function handleLogin disaat itu juga.
+4. Jika nilai role bukan admin, maka sesi autentikasi akan disimpan melalui
+saveAuthSession diisi dengan nilai yang didapatkan dari function login
+berupa access token, token type, expires in, data user, dan role user.
+- saveAuthSession dari authSession.ts akan menyimpan kredensial
+autentikasi dalam localStorage untuk digunakan kembali dalam halaman
+halaman lain.
+5. Terakhir, menampilkan login berhasil dan langsung mengarahkan pengguna
+ke redirect yang diambil dari redirectPath pada useLoginForm.
+2a. 1. Jika function login gagal dipanggil, maka akan turun ke catch block yang
+akan menampilkan pop-up error dengan pesan berupa data error atau
+fallback ke pesan "Koneksi Timeout, Silahkan Coba Lagi".
+2. Loading state akan diubah ke false, sehingga user bisa mencoba kembali
+melakukan submit
+Secara singkat, jika pengguna ingin login, maka data bergerak berdasarkan urutan berikut:
+1. Pada halaman LoginPeserta atau LoginAdmin, user memencet tombol submit
+2. handleLogin dijalankan dan akan memanggil login dari api.ts
+3. login akan memanggil endpoint /api/auth/login dengan data form dan
+mengembalikan data json
+4. Data json sampai pada halaman LoginPeserta atau LoginAdmin dan dicek
+kesesuaiannya. Jika sesuai, maka langsung redirect, dan jika gagal akan muncul
+pop-up

@@ -1,0 +1,69 @@
+5.2 Produk dan Inventory
+
+5.2.1 Deskripsi Fitur
+
+Fitur produk dan inventory digunakan untuk mengelola barang yang dijual toko beserta stoknya. Lewat fitur ini pengguna bisa menambah produk baru, mengubah harga dan stok, sampai menonaktifkan produk yang sudah tidak dijual. Data stok di sini menjadi penting karena nantinya akan dipakai modul penjualan untuk membatasi jumlah barang yang boleh masuk keranjang.
+
+5.2.2 Anggota yang Terlibat
+
+No   Nama Anggota                  Kontribusi
+1    Hasbi Mizan Azzami            Membuat ProductRepository, ProductViewModel, dan ProductScreen
+2    A. Wildan Hula Aufa           Membuat model Product
+
+5.2.3 File yang Digunakan
+
+No   Nama File               Fungsi File
+1    Product.kt              Model data produk
+2    ProductRepository.kt    Mengakses dan mengubah data produk ke Supabase
+3    ProductViewModel.kt     Mengatur state dan proses data produk
+4    ProductScreen.kt        Tampilan daftar dan form produk
+
+5.2.4 Kode ViewModel Produk
+
+Kotlin
+
+class ProductViewModel(private val repository: ProductRepository = ProductRepository()) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<ProductUiState>(ProductUiState.Loading)
+    val uiState: StateFlow<ProductUiState> = _uiState.asStateFlow()
+
+    init {
+        loadProducts()
+    }
+
+    fun loadProducts() {
+        viewModelScope.launch {
+            _uiState.value = ProductUiState.Loading
+            try {
+                val products = repository.getProducts().filter { it.is_active }
+                _uiState.value = ProductUiState.Success(products)
+            } catch (e: Exception) {
+                _uiState.value = ProductUiState.Error(e.message ?: "Failed to load products")
+            }
+        }
+    }
+
+...
+
+    fun addProduct(name: String, price: Double, stock: Double) {
+        viewModelScope.launch {
+            try {
+                repository.addProduct(Product(name = name, price = price, stock = stock))
+                loadProducts()
+            } catch (e: Exception) {
+                _uiState.value = ProductUiState.Error(e.message ?: "Failed to add product")
+            }
+        }
+    }
+
+...
+
+}
+
+5.2.5 Penjelasan Penerapan ViewModel Produk
+
+ProductViewModel menyimpan state daftar produk lewat _uiState yang bertipe MutableStateFlow. Seperti ViewModel lain, _uiState dibuat private supaya hanya ViewModel yang bisa mengubahnya, lalu ke luar hanya uiState yang diekspos lewat asStateFlow yang read only. Begitu ViewModel dibuat, blok init langsung memanggil loadProducts supaya daftar produk segera diambil tanpa menunggu aksi pengguna.
+
+Ada satu hal yang membedakan modul ini, yaitu penyaringan di dalam loadProducts. Setelah mengambil produk dari repository, ViewModel tidak langsung menampilkan semuanya. Ia memakai filter dengan syarat is_active, sehingga hanya produk yang masih aktif yang disimpan ke dalam state Success. Keputusan ini diambil karena penonaktifan produk di aplikasi ini bersifat soft delete. Produk yang dihapus sebenarnya hanya ditandai tidak aktif di database, bukan dibuang, jadi penyaringan di sisi ViewModel inilah yang memastikan produk nonaktif tidak ikut muncul di layar.
+
+Untuk penambahan produk, addProduct lebih dulu membungkus input pengguna menjadi sebuah objek Product, lalu mengoperkannya ke repository. Di sinilah terlihat perbedaan modul produk dari modul kas dan pengeluaran. Penambahan dan pengubahan produk di repository memakai insert serta update tabel secara langsung, bukan lewat RPC, karena operasinya memang sederhana dan tidak menyentuh perhitungan saldo. Hanya penonaktifannya yang lewat RPC deactivate_product supaya penandaan soft delete-nya terjaga di sisi database. Alur tiap operasi tulis kurang lebih seragam. Function dijalankan di dalam viewModelScope.launch, lalu memanggil repository, dan begitu berhasil ia memanggil loadProducts lagi. Pemanggilan ulang inilah yang menulis nilai baru ke _uiState, dan karena _uiState bersifat observable, layar yang mengamatinya lewat collectAsStateWithLifecycle akan langsung menggambar ulang daftarnya dengan data terbaru.

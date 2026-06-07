@@ -1,0 +1,205 @@
+BAB IV
+DOKUMENTASI IMPLEMENTASI PER ANGGOTA
+
+4.1 Anggota 1: Hasbi Mizan Azzami
+
+4.1.1 Modul yang Dikerjakan
+
+Nama Modul: Manajemen Kas
+
+4.1.2 Deskripsi Fitur
+
+Fitur ini digunakan untuk mengelola kas yang menjadi tempat menampung saldo uang toko. Tiap kas akan punya nama, saldo, serta status aktif, dan dari sinilah aliran uang masuk maupun keluar nantinya dihitung. Hal yang membedakan modul ini adalah saldo kas tidak pernah diubah langsung lewat update tabel biasa. Perubahan saldonya sengaja dijalankan lewat RPC supaya seluruh logika penyesuaian tetap terjaga di sisi database dan tidak bisa diakali dari aplikasi.
+
+Fitur yang dikerjakan meliputi:
+1. Menampilkan daftar kas beserta total saldo dan jumlah kas yang masih aktif
+2. Menyesuaikan saldo kas lewat manual adjustment yang disertai alasan
+3. Mengaktifkan dan menonaktifkan kas
+4. Mencari serta mengurutkan kas berdasarkan nama, saldo, status, atau yang paling baru
+
+4.1.3 File yang Dikerjakan
+
+No   Nama File           Fungsi File
+1    Kas.kt              Model data kas
+2    KasRepository.kt    Mengakses dan mengubah data kas ke Supabase
+3    KasViewModel.kt     Mengatur state dan proses data kas
+4    KasScreen.kt        Menampilkan halaman daftar dan form penyesuaian kas
+
+4.1.4 Kode Model
+
+Kotlin
+
+@Serializable
+data class Kas(
+    val id: String? = null,
+    val name: String,
+    val balance: Double = 0.0,
+    val is_active: Boolean = true,
+    val created_at: String? = null,
+    val updated_at: String? = null
+)
+
+Penjelasan Kode Model
+
+Model Kas akan memetakan satu baris tabel kas yang ada di Supabase, jadi satu instance Kas mewakili satu kas di database. Anotasi Serializable di atasnya menjadi kunci, karena dari situlah library serialization tahu cara mengubah JSON menjadi objek Kotlin. Tanpa anotasi tersebut, hasil response Postgrest tidak akan bisa di-decode menjadi objek Kas. Field balance dipakai untuk menyimpan saldo kas, lalu field is_active menjadi penanda apakah kas tersebut sedang aktif atau sudah dinonaktifkan. Nama field di sini sengaja ditulis memakai gaya snake case seperti is_active dan created_at supaya cocok dengan nama kolom di Postgres, sehingga proses decode-nya tidak perlu pemetaan tambahan. Adapun field id, created_at, dan updated_at sengaja dibuat nullable lalu diberi nilai default null. Alasannya, saat aplikasi hendak membuat kas baru, ketiga nilai itu belum ada karena memang akan diisi sendiri oleh database. Dengan dibuat nullable, objek Kas tetap valid walau ketiga field tadi masih kosong.
+
+4.1.5 Kode Repository
+
+Kotlin
+
+class KasRepository {
+    private val postgrest = SupabaseClientProvider.client.postgrest
+
+    suspend fun getKas(): List<Kas> = withContext(Dispatchers.IO) {
+        postgrest["kas"].select().decodeList<Kas>()
+    }
+
+    suspend fun manualAdjustment(kasId: String, amount: Double, reason: String) = withContext(Dispatchers.IO) {
+        postgrest.rpc(
+            function = "manual_kas_adjustment",
+            parameters = buildJsonObject {
+                put("p_kas_id", kasId)
+                put("p_balance_change", amount)
+                put("p_description", reason)
+            }
+        )
+    }
+
+...
+
+    suspend fun deactivateKas(kasId: String) = withContext(Dispatchers.IO) {
+        postgrest.rpc(
+            function = "deactivate_kas",
+            parameters = buildJsonObject {
+                put("p_kas_id", kasId)
+            }
+        )
+    }
+}
+
+Penjelasan Kode Repository
+
+KasRepository menjadi satu satunya lapisan yang benar benar berbicara dengan Supabase, sehingga ViewModel tidak perlu tahu detail jaringannya. Di bagian atas, repository menyimpan referensi postgrest yang diambil dari SupabaseClientProvider, dan dari objek itulah seluruh query dijalankan. Seluruh function di sini ditandai suspend, yang berarti function tersebut hanya bisa dipanggil dari dalam coroutine dan bisa ditunda tanpa memblokir thread pemanggilnya. Pembacaan data ditangani getKas yang menjalankan select pada tabel kas, lalu hasilnya langsung di-decode menjadi List<Kas> lewat decodeList. Untuk penyesuaian saldo, repository ini sengaja tidak menyentuh kolom balance secara langsung. Sebagai gantinya, manualAdjustment memanggil RPC manual_kas_adjustment dan mengirim tiga parameter lewat buildJsonObject. Yang menarik di sini, parameter p_balance_change diisi dengan selisih saldo, bukan saldo akhir, sehingga database yang akan menjumlahkannya ke saldo lama. Pola serupa dipakai untuk mengubah status, karena activateKas dan deactivateKas masing masing memanggil RPC activate_kas dan deactivate_kas dengan hanya mengirim p_kas_id. Seluruh operasi tadi dibungkus withContext Dispatchers.IO. Dispatchers.IO sendiri merupakan thread pool yang memang dirancang untuk pekerjaan input output seperti panggilan jaringan, sehingga main thread tetap bebas dan tampilan tidak ikut macet selama menunggu response.
+
+4.1.6 Kode ViewModel
+
+Kotlin
+
+sealed interface KasUiState {
+    data object Loading : KasUiState
+    data class Success(val kasList: List<Kas>) : KasUiState
+    data class Error(val message: String) : KasUiState
+}
+
+class KasViewModel(private val repository: KasRepository = KasRepository()) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<KasUiState>(KasUiState.Loading)
+    val uiState: StateFlow<KasUiState> = _uiState.asStateFlow()
+
+    init {
+        loadKas()
+    }
+
+    fun loadKas() {
+        viewModelScope.launch {
+            _uiState.value = KasUiState.Loading
+            try {
+                val list = repository.getKas()
+                _uiState.value = KasUiState.Success(list)
+            } catch (e: Exception) {
+                _uiState.value = KasUiState.Error(e.message ?: "Failed to load kas")
+            }
+        }
+    }
+
+...
+
+    fun toggleKasStatus(kas: Kas) {
+        val kasId = kas.id
+        if (kasId.isNullOrBlank()) {
+            _uiState.value = KasUiState.Error("Kas id is missing")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                if (kas.is_active) {
+                    repository.deactivateKas(kasId)
+                } else {
+                    repository.activateKas(kasId)
+                }
+                loadKas()
+            } catch (e: Exception) {
+                _uiState.value = KasUiState.Error(e.message ?: "Failed to update kas status")
+            }
+        }
+    }
+}
+
+Penjelasan Penerapan ViewModel
+
+Sebelum masuk ke ViewModel-nya, perlu dipahami dulu bentuk state-nya. Seluruh kemungkinan tampilan layar diwakili sealed interface KasUiState yang hanya punya tiga turunan yaitu Loading, Success, dan Error. Pemakaian sealed interface di sini menguntungkan, karena layar nantinya bisa memakai when yang menjamin semua kemungkinan state sudah ditangani. State Success sengaja membawa kasList, sementara Error membawa pesan, jadi datanya menempel langsung pada state-nya.
+
+State tersebut disimpan ViewModel di dalam _uiState yang bertipe MutableStateFlow. MutableStateFlow merupakan wadah penyimpan satu nilai yang sekaligus bisa diamati, jadi tiap kali nilainya diganti, seluruh pengamatnya akan langsung diberi tahu. Variabel _uiState sengaja dibuat private supaya hanya ViewModel yang boleh menggantinya. Ke luar, ViewModel hanya mengekspos uiState lewat asStateFlow yang bersifat read only, sehingga layar bisa membaca dan mengamati state tetapi tidak bisa mengubahnya sembarangan. Pemisahan ini menjaga supaya perubahan state hanya bersumber dari satu tempat.
+
+Begitu ViewModel dibuat, blok init akan langsung memanggil loadKas, jadi daftar kas sudah mulai diambil tanpa menunggu aksi pengguna. Di dalam loadKas, prosesnya dijalankan lewat viewModelScope.launch. viewModelScope merupakan coroutine scope yang umurnya mengikuti ViewModel, sehingga bila ViewModel dihancurkan, coroutine yang masih berjalan akan ikut dibatalkan supaya tidak bocor. Alur di dalamnya bisa diurutkan seperti berikut:
+1. Nilai _uiState lebih dulu diubah menjadi Loading supaya layar bisa menampilkan indikator memuat.
+2. ViewModel memanggil repository.getKas yang menunggu data dari Supabase tanpa memblokir main thread.
+3. Bila datanya berhasil sampai, _uiState diisi KasUiState.Success beserta daftar kas yang baru.
+4. Bila di tengah jalan terjadi masalah, exception-nya ditangkap lalu _uiState diubah menjadi KasUiState.Error berisi pesannya.
+
+Pola inilah yang membuat data di layar bisa segar setiap kali ada perubahan. Ambil contoh toggleKasStatus. Function ini lebih dulu memastikan id kas tidak kosong, lalu memilih memanggil deactivateKas atau activateKas berdasarkan nilai is_active milik kas yang ditekan. Yang penting, setelah operasi tulis itu selesai, ViewModel memanggil loadKas lagi. Pemanggilan ulang tersebut akan membaca data terbaru dari Supabase lalu menulis ulang nilai _uiState. Karena _uiState bersifat observable, perubahan nilai inilah yang nantinya mendorong layar untuk menggambar ulang dirinya dengan data yang sudah diperbarui.
+
+4.1.7 Kode UI Compose
+
+Kotlin
+
+@Composable
+fun KasScreen(
+    viewModel: KasViewModel,
+    onBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showAdjustSheet by remember { mutableStateOf<Kas?>(null) }
+
+...
+
+    when (uiState) {
+        is KasUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = cs.primary)
+        }
+        is KasUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text((uiState as KasUiState.Error).message, color = cs.error)
+        }
+        is KasUiState.Success -> {
+
+...
+
+            items(list) { kas ->
+                KasItem(
+                    kas = kas,
+                    fmt = fmt,
+                    onAdjust = { showAdjustSheet = it },
+                    onToggle = { viewModel.toggleKasStatus(it) }
+                )
+            }
+        }
+    }
+
+...
+
+}
+
+Penjelasan Kode UI Compose
+
+KasScreen menjadi penghubung terakhir antara state di ViewModel dan apa yang dilihat pengguna. Di baris awal, layar mengambil state lewat viewModel.uiState.collectAsStateWithLifecycle. Function ini akan mengamati StateFlow dari ViewModel lalu membungkus nilainya ke dalam sebuah State milik Compose. Begitu nilai di StateFlow berganti, variabel uiState ikut berganti, dan setiap composable yang membaca uiState akan otomatis menggambar ulang dirinya. Kata lifecycle pada namanya berarti pengamatan ini hanya berjalan ketika layar memang sedang terlihat, sehingga aplikasi tidak memboroskan sumber daya untuk mengamati state saat layar berada di latar belakang.
+
+Selain state dari ViewModel, layar juga memegang state lokalnya sendiri lewat showAdjustSheet. Variabel itu dibungkus remember dan mutableStateOf supaya nilainya bertahan saat layar digambar ulang. Isinya berupa kas yang sedang dipilih untuk disesuaikan saldonya, dan nilainya null selama belum ada kas yang dipilih.
+
+Penentuan tampilan kemudian dilakukan lewat blok when terhadap uiState yang sedang aktif. Ketika state-nya masih Loading, layar hanya akan menampilkan CircularProgressIndicator di tengah supaya pengguna tahu datanya sedang diambil. Begitu state berubah menjadi Error, pesan dari state tersebut langsung ditampilkan memakai warna error dari theme. Barulah ketika data berhasil sampai dan state menjadi Success, seluruh daftar kas akan digambar lewat LazyColumn yang tiap barisnya memakai composable KasItem. Pada tiap baris itu tersedia tombol Adjust beserta Switch. Tombol Adjust akan mengisi showAdjustSheet dengan kas terkait sehingga bottom sheet penyesuaian muncul, lalu Switch akan memanggil toggleKasStatus di ViewModel. Begitu sheet tersebut dikonfirmasi, layar lebih dulu menghitung selisih antara saldo baru dan saldo lama, kemudian mengirimnya ke manualAdjustment. Setelah itu siklusnya berputar kembali, karena ViewModel akan memuat ulang datanya lalu layar menggambar ulang daftar kas dengan saldo yang sudah diperbarui.
+
+4.1.8 Screenshot Hasil
+
+No   Tampilan                  Screenshot
+1    Halaman Daftar Kas        -
+2    Form Adjust Saldo Kas     -
+3    Data Kas di Supabase      -

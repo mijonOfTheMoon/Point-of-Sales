@@ -1,0 +1,21 @@
+3.2 Daftar File Utama Aplikasi
+
+No   Nama Folder/File                Fungsi
+1    MainActivity.kt                 Activity utama yang memanggil AppNavigation di dalam theme aplikasi
+2    navigation/Screen.kt            Mendefinisikan seluruh tujuan navigasi sebagai sealed interface NavKey
+3    navigation/AppNavigation.kt     Mengatur back stack dan menentukan layar awal berdasarkan status sesi
+4    data/SupabaseClientProvider.kt  Membangun SupabaseClient beserta plugin Auth dan Postgrest
+5    data/AuthRepository.kt          Menangani signUp, signIn, signOut, dan pembacaan profil sesi
+6    data/KasRepository.kt           Mengambil dan menyesuaikan saldo kas lewat RPC
+7    data/CustomerRepository.kt      Menangani CRUD pelanggan lewat RPC
+8    data/ExpenseRepository.kt       Mencatat dan membatalkan pengeluaran lewat RPC
+9    data/ProductRepository.kt       Menangani CRUD produk lewat select, insert, update, dan RPC
+10   data/SalesRepository.kt         Mengambil transaksi dan memproses penjualan lewat RPC process_sale
+11   data/DashboardRepository.kt     Mengambil ringkasan dashboard lewat RPC get_dashboard_summary
+12   data/UserRepository.kt          Mengelola akun pengguna lewat Edge Function admin-users
+13   model/                          Berisi data class seperti Kas, Customer, Expense, Product, dan Transaction
+14   viewmodel/                      Berisi ViewModel beserta UiState tiap fitur
+15   viewmodel/AuthState.kt          Mendefinisikan AuthUiState dan AuthCheckState
+16   ui/                             Berisi seluruh layar Compose tiap fitur
+17   ui/SharedComponents.kt          Menyimpan komponen bersama seperti SearchSortBar dan rupiahFormatter
+18   ui/theme/                       Menyimpan Color, Theme, dan Type aplikasi

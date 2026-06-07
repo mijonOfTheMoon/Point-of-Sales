@@ -1,0 +1,10 @@
+BAB I
+PENDAHULUAN
+
+1.1 Deskripsi Singkat Aplikasi
+
+Aplikasi ini merupakan aplikasi mobile Android yang dibangun memakai Jetpack Compose dengan arsitektur MVVM, lalu ditopang Supabase sebagai backend-nya. Tujuannya supaya pemilik toko bisa mengelola seluruh operasional hariannya cukup lewat satu perangkat. Lewat aplikasi ini, proses penjualan sampai pencatatan keuangan toko akan berjalan secara digital dan langsung tersimpan ke database.
+
+Dari sisi fungsi, aplikasi akan menangani pencatatan transaksi penjualan di sisi kasir, pengelolaan produk beserta stoknya, data pelanggan, beberapa kas, sampai pengeluaran toko. Tiap transaksi penjualan yang diproses akan langsung memengaruhi stok produk yang terjual sekaligus saldo kas yang dipilih. Supaya pemilik toko tetap punya gambaran besar, aplikasi juga menyajikan dashboard ringkasan yang menampilkan total penjualan, pengeluaran, jumlah transaksi, serta saldo kas yang masih aktif.
+
+Akses tiap pengguna nantinya diatur lewat role supaya tiap orang hanya melihat bagian yang menjadi tanggung jawabnya. Aplikasi ini mengenal empat role yaitu admin, supervisor, cashier, dan stocker. Role tersebut akan menentukan menu serta data yang muncul begitu pengguna berhasil login. Posisi admin memegang kontrol paling penuh karena dialah yang bisa mengatur akun pengguna lain lewat Supabase Edge Function.

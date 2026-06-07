@@ -1,0 +1,9 @@
+BAB II
+PEMBAGIAN TUGAS KELOMPOK
+
+2.1 Identitas Anggota Kelompok
+
+No   Nama Mahasiswa                NIM                Peran dalam Kelompok
+1    Hasbi Mizan Azzami            235150701111025    Ketua kelompok dan pengembang inti
+2    A. Issadurrofiq Jaya Utama    235150700111023    Anggota pengembang
+3    A. Wildan Hula Aufa           235150700111013    Anggota pengembang
