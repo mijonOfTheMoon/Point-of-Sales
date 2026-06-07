@@ -116,11 +116,11 @@ class ExpenseViewModel(private val repository: ExpenseRepository = ExpenseReposi
 Bentuk tampilan layar diwakili sealed interface ExpenseUiState yang punya turunan Loading, Success, dan Error. State tersebut disimpan di dalam _uiState yang bertipe MutableStateFlow, yaitu wadah satu nilai yang bisa diamati sehingga tiap pergantian nilainya langsung diberitahukan ke pengamatnya. Variabel _uiState dibuat private supaya hanya ViewModel yang berhak mengubahnya, lalu ke luar hanya uiState yang diekspos lewat asStateFlow yang read only. Begitu ViewModel dibuat, blok init langsung memanggil loadExpenses sehingga daftar pengeluaran sudah mulai diambil tanpa menunggu aksi pengguna.
 
 Bagian yang menarik di modul ini ada pada createExpense, karena ia menjaga supaya tidak ada pengeluaran tanpa kas sumber dana. Alurnya bisa diurutkan seperti berikut:
-1. Function lebih dulu memeriksa apakah kasId kosong. Bila kosong, _uiState langsung diisi Error lalu function berhenti di situ, sehingga proses tulis sama sekali tidak dijalankan.
-2. Bila kasId terisi, prosesnya berlanjut di dalam viewModelScope.launch, yaitu coroutine scope yang umurnya mengikuti ViewModel.
-3. ViewModel memanggil repository.createExpense untuk mengirim pengeluaran baru ke Supabase lewat RPC.
-4. Begitu pencatatan berhasil, ViewModel memanggil loadExpenses lagi supaya daftar terbaru ikut terbaca.
-5. Bila terjadi kegagalan, exception-nya ditangkap lalu _uiState diubah menjadi Error berisi pesannya.
+1. createExpense lebih dulu memeriksa apakah kasId kosong lewat isBlank. Bila kosong, createExpense mengisi _uiState dengan ExpenseUiState.Error lalu berhenti di situ, sehingga proses tulis sama sekali tidak dijalankan.
+2. Bila kasId terisi, createExpense melanjutkan di dalam viewModelScope.launch, yaitu coroutine scope yang umurnya mengikuti ViewModel.
+3. createExpense memanggil repository.createExpense dengan description, amount, dan kasId, yang lalu mengirim p_description, p_total, dan p_kas_id ke RPC create_expense.
+4. Begitu pencatatan berhasil, createExpense memanggil loadExpenses yang menjalankan repository.getExpenses lalu menulis ExpenseUiState.Success berisi daftar terbaru ke _uiState.
+5. Bila terjadi kegagalan, createExpense menangkap exception-nya lalu mengisi _uiState dengan ExpenseUiState.Error berisi pesannya.
 
 Pemanggilan loadExpenses di akhir itulah yang membuat saldo dan daftar di layar selalu menyesuaikan. loadExpenses akan membaca ulang tabel expense lalu menulis nilai baru ke _uiState, dan karena _uiState bersifat observable, perubahan nilai ini akan mendorong layar menggambar ulang dirinya dengan data terbaru. Pembatalan pengeluaran lewat cancelExpense juga mengikuti pola yang sama, jadi begitu sebuah pengeluaran dibatalkan dan saldo kas dikembalikan oleh database, daftar di layar akan ikut diperbarui.
 
@@ -144,7 +144,12 @@ if (showAddSheet) {
 
 ExpenseScreen punya keunikan dibanding layar lain, sebab ia menerima dua ViewModel sekaligus yaitu expenseViewModel untuk data pengeluaran dan kasViewModel untuk daftar kas. Hal ini memang diperlukan, karena tiap pengeluaran harus menunjuk ke satu kas sumber dana, dan daftar kas itu dipegang oleh modul kas. Kedua state-nya sama sama diambil lewat collectAsStateWithLifecycle supaya layar ikut menggambar ulang begitu salah satu state-nya berganti.
 
-Ketika showAddSheet bernilai true, layar tidak langsung menampilkan semua kas. Ia lebih dulu menyaring daftar kas dan hanya menyisakan yang aktif lewat filter is_active, sehingga pengguna tidak bisa membebankan pengeluaran ke kas yang sudah dinonaktifkan. Bila kebetulan state kas belum siap, hasil penyaringannya akan jatuh ke emptyList lewat operator elvis supaya layar tetap aman. Daftar yang sudah disaring tadi kemudian dioper ke ExpenseSheet supaya pengguna bisa memilihnya lewat sebuah dropdown. Begitu form dikonfirmasi, tombolnya memanggil createExpense dengan membawa deskripsi, nominal, serta id kas yang dipilih, lalu showAddSheet dikembalikan ke false supaya sheet tertutup. Daftar pengeluarannya sendiri digambar lewat LazyColumn yang tiap barisnya memakai composable ExpenseItem. Pada baris yang belum dibatalkan masih tersedia tombol Cancel, dan tombol itulah yang nantinya memanggil cancelExpense. Baris yang sudah dibatalkan akan tampil lebih redup serta diberi label Cancelled, dan kondisi tampilan ini ditentukan langsung dari property is_cancelled milik model.
+Alur pencatatan pengeluaran baru di layar ini berjalan seperti berikut:
+1. Ketika showAddSheet bernilai true, layar lebih dulu menyaring daftar kas dan hanya menyisakan yang aktif lewat filter is_active, sehingga pengguna tidak bisa membebankan pengeluaran ke kas yang sudah dinonaktifkan. Bila state kas belum siap, hasil penyaringannya jatuh ke emptyList lewat operator elvis supaya layar tetap aman.
+2. Daftar yang sudah disaring tadi dioper ke ExpenseSheet supaya pengguna bisa memilihnya lewat sebuah dropdown.
+3. Begitu form dikonfirmasi, tombolnya memanggil createExpense dengan membawa deskripsi, nominal, serta id kas yang dipilih, lalu showAddSheet dikembalikan ke false supaya sheet tertutup.
+
+Daftar pengeluarannya sendiri digambar lewat LazyColumn yang tiap barisnya memakai composable ExpenseItem. Pada baris yang belum dibatalkan masih tersedia tombol Cancel, dan tombol itulah yang nantinya memanggil cancelExpense. Baris yang sudah dibatalkan akan tampil lebih redup serta diberi label Cancelled, dan kondisi tampilan ini ditentukan langsung dari property is_cancelled milik model.
 
 4.3.12 Screenshot Hasil
 

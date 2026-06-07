@@ -86,10 +86,17 @@ fun processSale(kasId: String, customerId: String?, paid: Double) {
 SalesViewModel sedikit berbeda dari ViewModel lain, sebab ia memegang beberapa aliran state sekaligus. Selain _uiState untuk status proses penjualan, ada pula _cart untuk isi keranjang, _products untuk daftar produk, dan _transactions untuk riwayat transaksi. Masing masing memakai MutableStateFlow yang private lalu diekspos sebagai StateFlow read only, sehingga layar bisa mengamati keranjang dan daftar produk secara terpisah. Pemisahan ini berguna, karena keranjang sering berubah saat pengguna menambah barang, sementara status proses penjualan hanya berubah saat checkout.
 
 Pengelolaan keranjang ditangani addToCart, dan logikanya cukup berhati hati supaya jumlah barang tidak pernah melebihi stok. Alurnya bisa diurutkan seperti berikut:
-1. Function lebih dulu menghitung maxQuantity dari stok produk, lalu memakai coerceAtMost supaya jumlah di keranjang tidak akan pernah melampaui batas stok itu.
-2. Bila produknya sudah ada di keranjang, jumlahnya ditambah dengan tetap dibatasi maxQuantity, lalu item lama diganti lewat copy dengan jumlah yang baru.
-3. Bila jumlah barunya justru turun sampai nol atau kurang, item tersebut dikeluarkan dari keranjang.
-4. Bila produknya belum ada di keranjang, sebuah CartItem baru ditambahkan.
-5. Di akhir, _cart.value diisi dengan daftar keranjang yang baru, dan karena _cart bersifat observable, layar kasir akan langsung menggambar ulang jumlah tiap barang.
+1. addToCart lebih dulu menghitung maxQuantity dari product.stock lewat coerceAtLeast, lalu nilai itu dipakai dengan coerceAtMost supaya jumlah di keranjang tidak pernah melampaui batas stok.
+2. Bila produknya sudah ada di _cart, addToCart menambah quantity-nya dengan tetap dibatasi maxQuantity, lalu mengganti CartItem lama lewat copy dengan quantity yang baru.
+3. Bila quantity barunya justru turun sampai nol atau kurang, addToCart mengeluarkan CartItem tersebut dari _cart.
+4. Bila produknya belum ada di _cart, addToCart menambahkan CartItem baru berisi product dan quantity.
+5. Di akhir, addToCart menulis daftar keranjang baru ke _cart.value, dan karena _cart bersifat observable, SalesScreen langsung menggambar ulang jumlah tiap barang.
 
-Saat checkout, processSale memegang aturan yang lebih ketat. Function ini lebih dulu memastikan kas sudah dipilih dan keranjang tidak kosong. Bila salah satunya tidak terpenuhi, _uiState langsung diisi Error dan proses berhenti sebelum menyentuh jaringan. Setelah lolos pengecekan, ViewModel mengubah _uiState menjadi Loading, lalu memetakan tiap isi keranjang menjadi TransactionItemInput yang membawa product_id, quantity, dan price_at_sale. Daftar item itu kemudian dikirim ke repository lewat RPC process_sale, sehingga database yang akan menyimpan transaksi, mengurangi stok, dan menambah saldo kas dalam satu proses. Begitu berhasil, ViewModel menandai state Success lalu langsung memanggil loadProducts dan loadTransactions. Kedua pemanggilan ulang inilah yang membuat stok terbaru dan riwayat transaksi ikut tersegarkan, sehingga layar yang mengamatinya akan menggambar ulang dirinya tanpa pengguna perlu memuat manual.
+Saat checkout, processSale memegang aturan yang lebih ketat, dan alurnya seperti berikut:
+1. processSale lebih dulu memastikan kasId tidak kosong lewat isBlank dan _cart tidak kosong. Bila salah satunya tidak terpenuhi, processSale mengisi _uiState dengan SalesUiState.Error lalu berhenti sebelum menyentuh jaringan.
+2. Setelah lolos pengecekan, processSale mengubah _uiState menjadi SalesUiState.Loading supaya tombol pembayaran bisa menampilkan indikator.
+3. processSale memetakan tiap CartItem di _cart menjadi TransactionItemInput yang membawa product_id, quantity, dan price_at_sale yang diambil dari product.price.
+4. processSale memanggil repository.processSale dengan kasId, customerId, daftar item tadi, dan paid, yang lalu mengirim p_kas_id, p_customer_id, p_items, dan p_paid ke RPC process_sale, sehingga database yang menyimpan transaksi, mengurangi stok, dan menambah saldo kas dalam satu proses.
+5. Begitu berhasil, processSale mengisi _uiState dengan SalesUiState.Success lalu memanggil loadProducts dan loadTransactions.
+
+Kedua pemanggilan ulang pada langkah terakhir itulah yang membuat stok terbaru dan riwayat transaksi ikut tersegarkan, sehingga layar yang mengamatinya akan menggambar ulang dirinya tanpa pengguna perlu memuat manual.

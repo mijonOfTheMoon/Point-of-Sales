@@ -124,10 +124,10 @@ Bentuk tampilan layar diwakili sealed interface CustomerUiState yang punya tiga 
 State tersebut disimpan di dalam _uiState yang bertipe MutableStateFlow. MutableStateFlow merupakan wadah satu nilai yang bisa diamati, jadi begitu nilainya diganti, seluruh pengamatnya langsung diberi tahu. Variabel _uiState dibuat private supaya hanya ViewModel yang boleh mengubahnya, lalu ke luar ViewModel hanya mengekspos uiState lewat asStateFlow yang read only. Dengan begitu layar bisa mengamati state tetapi tidak bisa mengubahnya, dan sumber perubahan state tetap terpusat di ViewModel.
 
 Begitu ViewModel dibuat, blok init langsung memanggil loadCustomers, jadi daftar pelanggan sudah mulai diambil tanpa menunggu aksi pengguna. Tiap operasi tulis di sini mengikuti pola yang sama, dan registerCustomer bisa dijadikan contoh. Alurnya kurang lebih seperti berikut:
-1. Function dijalankan di dalam viewModelScope.launch, yaitu coroutine scope yang umurnya mengikuti ViewModel sehingga aman dari kebocoran.
-2. ViewModel memanggil repository.registerCustomer untuk mengirim data pelanggan baru ke Supabase.
-3. Bila pendaftaran berhasil, ViewModel langsung memanggil loadCustomers lagi supaya daftar terbaru ikut terbaca.
-4. Bila gagal, exception-nya ditangkap lalu _uiState diubah menjadi Error berisi pesannya.
+1. registerCustomer menjalankan coroutine lewat viewModelScope.launch, yaitu coroutine scope yang umurnya mengikuti ViewModel sehingga aman dari kebocoran.
+2. registerCustomer memanggil repository.registerCustomer dengan name dan phone, yang lalu mengirim p_name dan p_phone ke RPC register_customer.
+3. Bila pendaftaran berhasil, registerCustomer memanggil loadCustomers yang menjalankan repository.getCustomers lalu menulis CustomerUiState.Success berisi daftar terbaru ke _uiState.
+4. Bila gagal, registerCustomer menangkap exception-nya lalu mengisi _uiState dengan CustomerUiState.Error berisi pesannya.
 
 Pemanggilan loadCustomers di akhir itulah yang membuat layar selalu menampilkan data terbaru. loadCustomers akan membaca ulang tabel customer lalu menulis nilai baru ke _uiState, dan karena _uiState bersifat observable, perubahan nilai ini akan mendorong layar menggambar ulang daftarnya tanpa pengguna perlu menyegarkan secara manual.
 
@@ -167,7 +167,12 @@ CustomerScreen mengambil state dari ViewModel lewat viewModel.uiState.collectAsS
 
 Selain state dari ViewModel, layar memegang dua state lokal yang mengatur munculnya bottom sheet. Keduanya dibungkus remember dan mutableStateOf supaya nilainya bertahan saat layar digambar ulang. showAddSheet menjadi penanda apakah form pendaftaran sedang dibuka, lalu customerToEdit menyimpan pelanggan yang sedang diubah dan bernilai null selama belum ada yang dipilih.
 
-Kedua state lokal itulah yang mengarahkan alur form. Ketika showAddSheet bernilai true, CustomerSheet akan muncul dalam keadaan kosong, lalu tombol konfirmasinya memanggil registerCustomer di ViewModel. Begitu pengguna menekan ikon edit pada salah satu baris, customerToEdit akan terisi pelanggan tersebut sehingga CustomerSheet muncul lagi dengan data yang sudah terisi. Pada mode ubah ini, tombol konfirmasinya memanggil updateCustomer dengan membawa id pelanggan yang sedang dibuka. Daftar pelanggannya sendiri digambar lewat LazyColumn yang tiap barisnya memakai composable CustomerItem berisi tombol edit dan Switch status. Setelah pendaftaran maupun perubahan berhasil, ViewModel akan memuat ulang datanya sehingga daftar di layar langsung menyesuaikan tanpa perlu disegarkan manual.
+Kedua state lokal itulah yang mengarahkan alur form, dan urutannya seperti berikut:
+1. Ketika showAddSheet bernilai true, CustomerSheet muncul dalam keadaan kosong, lalu tombol konfirmasinya memanggil registerCustomer di ViewModel.
+2. Ketika pengguna menekan ikon edit pada salah satu baris, customerToEdit terisi pelanggan tersebut sehingga CustomerSheet muncul lagi dengan data yang sudah terisi, dan tombol konfirmasinya memanggil updateCustomer dengan membawa id pelanggan yang dibuka.
+3. Setelah pendaftaran maupun perubahan berhasil, ViewModel memuat ulang datanya sehingga daftar di layar langsung menyesuaikan tanpa perlu disegarkan manual.
+
+Daftar pelanggannya sendiri digambar lewat LazyColumn yang tiap barisnya memakai composable CustomerItem berisi tombol edit dan Switch status.
 
 4.2.12 Screenshot Hasil
 

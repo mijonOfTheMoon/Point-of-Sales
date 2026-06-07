@@ -142,12 +142,17 @@ Sebelum masuk ke ViewModel-nya, perlu dipahami dulu bentuk state-nya. Seluruh ke
 State tersebut disimpan ViewModel di dalam _uiState yang bertipe MutableStateFlow. MutableStateFlow merupakan wadah penyimpan satu nilai yang sekaligus bisa diamati, jadi tiap kali nilainya diganti, seluruh pengamatnya akan langsung diberi tahu. Variabel _uiState sengaja dibuat private supaya hanya ViewModel yang boleh menggantinya. Ke luar, ViewModel hanya mengekspos uiState lewat asStateFlow yang bersifat read only, sehingga layar bisa membaca dan mengamati state tetapi tidak bisa mengubahnya sembarangan. Pemisahan ini menjaga supaya perubahan state hanya bersumber dari satu tempat.
 
 Begitu ViewModel dibuat, blok init akan langsung memanggil loadKas, jadi daftar kas sudah mulai diambil tanpa menunggu aksi pengguna. Di dalam loadKas, prosesnya dijalankan lewat viewModelScope.launch. viewModelScope merupakan coroutine scope yang umurnya mengikuti ViewModel, sehingga bila ViewModel dihancurkan, coroutine yang masih berjalan akan ikut dibatalkan supaya tidak bocor. Alur di dalamnya bisa diurutkan seperti berikut:
-1. Nilai _uiState lebih dulu diubah menjadi Loading supaya layar bisa menampilkan indikator memuat.
-2. ViewModel memanggil repository.getKas yang menunggu data dari Supabase tanpa memblokir main thread.
-3. Bila datanya berhasil sampai, _uiState diisi KasUiState.Success beserta daftar kas yang baru.
-4. Bila di tengah jalan terjadi masalah, exception-nya ditangkap lalu _uiState diubah menjadi KasUiState.Error berisi pesannya.
+1. loadKas lebih dulu mengubah _uiState menjadi KasUiState.Loading supaya layar bisa menampilkan indikator memuat.
+2. loadKas memanggil repository.getKas yang menjalankan select pada tabel kas lalu men-decode hasilnya menjadi List<Kas>, dan pemanggilan ini menunggu tanpa memblokir main thread.
+3. Bila datanya berhasil sampai, loadKas mengisi _uiState dengan KasUiState.Success beserta daftar kas yang baru.
+4. Bila di tengah jalan muncul exception, loadKas menangkapnya lalu mengisi _uiState dengan KasUiState.Error berisi pesannya.
 
-Pola inilah yang membuat data di layar bisa segar setiap kali ada perubahan. Ambil contoh toggleKasStatus. Function ini lebih dulu memastikan id kas tidak kosong, lalu memilih memanggil deactivateKas atau activateKas berdasarkan nilai is_active milik kas yang ditekan. Yang penting, setelah operasi tulis itu selesai, ViewModel memanggil loadKas lagi. Pemanggilan ulang tersebut akan membaca data terbaru dari Supabase lalu menulis ulang nilai _uiState. Karena _uiState bersifat observable, perubahan nilai inilah yang nantinya mendorong layar untuk menggambar ulang dirinya dengan data yang sudah diperbarui.
+Pola inilah yang membuat data di layar bisa segar setiap kali ada perubahan. Ambil contoh toggleKasStatus yang alurnya seperti berikut:
+1. toggleKasStatus lebih dulu membaca kas.id lalu memastikannya tidak kosong lewat isNullOrBlank, supaya proses tidak berjalan tanpa target yang jelas.
+2. toggleKasStatus memanggil repository.deactivateKas bila kas.is_active bernilai true, atau repository.activateKas bila bernilai false, dan keduanya mengirim p_kas_id ke RPC deactivate_kas atau activate_kas.
+3. Setelah RPC itu selesai, toggleKasStatus memanggil loadKas yang menjalankan repository.getKas lalu menulis KasUiState.Success berisi daftar kas terbaru ke _uiState.
+
+Karena _uiState bersifat observable, perubahan nilai pada langkah terakhir itulah yang nantinya mendorong layar untuk menggambar ulang dirinya dengan data yang sudah diperbarui.
 
 4.1.7 Kode UI Compose
 
@@ -195,7 +200,14 @@ KasScreen menjadi penghubung terakhir antara state di ViewModel dan apa yang dil
 
 Selain state dari ViewModel, layar juga memegang state lokalnya sendiri lewat showAdjustSheet. Variabel itu dibungkus remember dan mutableStateOf supaya nilainya bertahan saat layar digambar ulang. Isinya berupa kas yang sedang dipilih untuk disesuaikan saldonya, dan nilainya null selama belum ada kas yang dipilih.
 
-Penentuan tampilan kemudian dilakukan lewat blok when terhadap uiState yang sedang aktif. Ketika state-nya masih Loading, layar hanya akan menampilkan CircularProgressIndicator di tengah supaya pengguna tahu datanya sedang diambil. Begitu state berubah menjadi Error, pesan dari state tersebut langsung ditampilkan memakai warna error dari theme. Barulah ketika data berhasil sampai dan state menjadi Success, seluruh daftar kas akan digambar lewat LazyColumn yang tiap barisnya memakai composable KasItem. Pada tiap baris itu tersedia tombol Adjust beserta Switch. Tombol Adjust akan mengisi showAdjustSheet dengan kas terkait sehingga bottom sheet penyesuaian muncul, lalu Switch akan memanggil toggleKasStatus di ViewModel. Begitu sheet tersebut dikonfirmasi, layar lebih dulu menghitung selisih antara saldo baru dan saldo lama, kemudian mengirimnya ke manualAdjustment. Setelah itu siklusnya berputar kembali, karena ViewModel akan memuat ulang datanya lalu layar menggambar ulang daftar kas dengan saldo yang sudah diperbarui.
+Penentuan tampilan kemudian dilakukan lewat blok when terhadap uiState yang sedang aktif. Ketika state-nya masih Loading, layar hanya akan menampilkan CircularProgressIndicator di tengah supaya pengguna tahu datanya sedang diambil. Begitu state berubah menjadi Error, pesan dari state tersebut langsung ditampilkan memakai warna error dari theme. Barulah ketika data berhasil sampai dan state menjadi Success, seluruh daftar kas akan digambar lewat LazyColumn yang tiap barisnya memakai composable KasItem.
+
+Pada tiap baris itu tersedia tombol Adjust beserta Switch, dan dari tombol Adjust inilah alur penyesuaian saldo berjalan:
+1. Tombol Adjust mengisi showAdjustSheet dengan kas yang ditekan, sehingga KasAdjustSheet berupa ModalBottomSheet muncul untuk kas tersebut.
+2. Begitu sheet dikonfirmasi, KasScreen menghitung balanceChange dari selisih saldo baru dan kas.balance, lalu memanggil viewModel.manualAdjustment dengan kas.id, balanceChange, dan deskripsi alasannya.
+3. manualAdjustment memanggil RPC manual_kas_adjustment lalu menjalankan loadKas, sehingga _uiState terisi KasUiState.Success terbaru dan daftar kas digambar ulang dengan saldo yang sudah diperbarui.
+
+Di luar alur itu, Switch pada tiap baris bekerja terpisah dengan langsung memanggil toggleKasStatus di ViewModel untuk mengaktifkan atau menonaktifkan kas.
 
 4.1.8 Screenshot Hasil
 

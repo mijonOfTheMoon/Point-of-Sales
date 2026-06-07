@@ -38,11 +38,11 @@ fun updateProfile(newName: String?, newEmail: String?, newPassword: String?) {
 5.5.5 Penjelasan Penerapan ViewModel Profil
 
 Pembaruan profil ditangani updateProfile pada AuthViewModel, dan function ini memakai uiState yang sama dengan login supaya layar bisa menampilkan status memuat, berhasil, atau gagal. Alur dasarnya bisa diurutkan seperti berikut:
-1. uiState lebih dulu diubah menjadi Loading supaya tombol simpan di form bisa menampilkan indikator.
-2. ViewModel meminta repository menjalankan updateProfile dengan membawa nama, email, dan password baru. Ketiganya bertipe nullable, jadi field yang dibiarkan kosong oleh pengguna akan dilewati dan hanya field yang benar benar diisi yang dikirim.
-3. Bila berhasil, ViewModel menerima data pengguna terbaru lalu memanggil applyCurrentUserSnapshot.
-4. Setelah itu uiState diisi Success supaya layar bisa menampilkan pesan berhasil.
-5. Bila gagal, exception-nya ditangkap lalu uiState diubah menjadi Error berisi pesannya.
+1. updateProfile lebih dulu mengubah _uiState menjadi AuthUiState.Loading supaya tombol simpan di form bisa menampilkan indikator.
+2. updateProfile memanggil repository.updateProfile dengan newName, newEmail, dan newPassword. Ketiganya bertipe nullable, jadi field yang dibiarkan kosong oleh pengguna akan dilewati, dan hanya field yang benar benar diisi yang dikirim ke Edge Function admin-users lewat action self_update.
+3. Bila berhasil, updateProfile menerima objek AdminUser terbaru dari repository lalu memanggil applyCurrentUserSnapshot yang mengisi _checkState dengan AuthCheckState.Authenticated.
+4. Setelah itu updateProfile mengisi _uiState dengan AuthUiState.Success supaya ProfileScreen bisa menampilkan pesan berhasil lewat snackbar.
+5. Bila gagal, updateProfile menangkap exception-nya lalu mengisi _uiState dengan AuthUiState.Error berisi pesannya.
 
 Ada satu hal penting yang terjadi di balik layar saat password ikut diganti. Pembaruan profil sebenarnya dijalankan lewat UserRepository yang memanggil Edge Function admin-users dengan action self_update. Begitu password berubah, Supabase akan menganggap kredensialnya berubah lalu membatalkan token sesi yang lama. Tanpa penanganan khusus, pengguna akan langsung terlempar keluar tepat setelah menyimpan. Untuk mencegahnya, AuthRepository akan otomatis menjalankan sign in ulang memakai kredensial baru begitu password diganti, sehingga sesinya tetap hidup dan pengguna tidak perlu login lagi.
 

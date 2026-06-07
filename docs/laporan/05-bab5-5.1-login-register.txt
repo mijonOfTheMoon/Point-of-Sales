@@ -75,10 +75,10 @@ AuthViewModel memegang dua aliran state sekaligus, dan keduanya punya peran yang
 Begitu ViewModel dibuat, blok init akan langsung memanggil checkSession supaya aplikasi tahu apakah ada sesi yang masih tersimpan dari pemakaian sebelumnya. Di dalam checkSession, ViewModel bertanya ke repository lewat isUserLoggedIn. Function itu di sisi repository menunggu status sesi dari Supabase Auth sampai jelas, lalu mengembalikan true atau false. Hasilnya menentukan arah berikutnya. Apabila pengguna memang sudah login, ViewModel memanggil refreshAuthenticatedState untuk mengambil profil terbaru lalu mengisi checkState menjadi Authenticated. Apabila belum, checkState diisi Unauthenticated. Nilai checkState inilah yang nantinya dibaca AppNavigation untuk memutuskan layar awalnya dashboard atau login.
 
 Alur saat pengguna menekan tombol sign in bisa diurutkan seperti berikut:
-1. signIn lebih dulu mengubah uiState menjadi Loading supaya tombolnya bisa menampilkan indikator dan mencegah penekanan ganda.
-2. ViewModel meminta repository menjalankan signIn ke Supabase Auth dengan email dan password yang diisi.
-3. Bila kredensialnya benar, ViewModel memanggil refreshAuthenticatedState untuk menyegarkan profil dan menandai checkState sebagai Authenticated.
-4. Setelah itu uiState diisi Success, dan LoginScreen yang mengamati uiState akan bereaksi terhadap keberhasilan tersebut.
-5. Bila gagal, exception-nya ditangkap lalu uiState diubah menjadi Error berisi pesannya.
+1. signIn lebih dulu mengubah _uiState menjadi AuthUiState.Loading supaya tombolnya bisa menampilkan indikator dan mencegah penekanan ganda.
+2. signIn memanggil repository.signIn dengan email dan password, yang lalu menjalankan signInWith(Email) ke Supabase Auth.
+3. Bila kredensialnya benar, signIn memanggil refreshAuthenticatedState yang membaca profil lewat getCurrentUserProfile lalu mengisi _checkState dengan AuthCheckState.Authenticated.
+4. Setelah itu signIn mengisi _uiState dengan AuthUiState.Success, dan LoginScreen yang mengamati uiState akan bereaksi terhadap keberhasilan tersebut.
+5. Bila gagal, signIn menangkap exception-nya lalu mengisi _uiState dengan AuthUiState.Error berisi pesannya.
 
 Di sisi layar, LoginScreen mengambil uiState lewat collectAsStateWithLifecycle. Begitu uiState berubah menjadi Loading, tombol sign in berganti menjadi indikator memuat. Begitu uiState menjadi Success, layar menandai login berhasil lalu memanggil resetUiState supaya status proses kembali ke Idle. RegisterScreen bekerja dengan pola serupa lewat signUp, hanya saja setelah berhasil ia memberi jeda singkat lalu mengarahkan pengguna kembali ke halaman login.

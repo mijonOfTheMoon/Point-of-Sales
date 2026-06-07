@@ -70,6 +70,25 @@ Contoh BAGUS. Mengalir, ada filler, antar kalimat nyambung:
 - Penjelasan harus rinci dan runut seperti example-tutorial.txt. Jangan berhenti di permukaan.
 - Jelaskan alur data dari awal sampai akhir. Mulai dari aksi pengguna di layar, masuk ke ViewModel, lanjut ke Repository, sampai ke Supabase, lalu balik lagi mengubah state dan menggambar ulang UI.
 - Untuk alur yang panjang, pakai langkah bernomor seperti example-tutorial.txt supaya urutannya jelas.
+- Aturan numbering. Tiap kali penjelasan kode membahas alur eksekusi atau urutan jalannya data, tulis bagian itu sebagai daftar bernomor. Hanya bagian flow yang dibuat bernomor. Penjelasan konsep, konteks, dan alasan tetap berbentuk paragraf. Penjelasan model dan repository yang sifatnya mendeskripsikan peran function tetap paragraf karena bukan alur berurutan.
+
+## Spesifik. Dilarang Generik. Ini Sumber Kesalahan Berulang
+- Dilarang keras menulis kata Function secara generik. Selalu sebut nama function-nya. Tulis addProduct, bukan Function.
+- Subjek tiap langkah flow harus nama function yang nyata, bukan ViewModel atau Function.
+- Sebut parameter dan nilai yang dikirim. Jangan menulis mengirim data. Tulis data apa yang dikirim, misalnya name, price, dan stock.
+- Sebut method repository yang dipanggil beserta argumennya. Tulis repository.addProduct dengan objek Product berisi name, price, dan stock.
+- Sebut nama state lengkap dengan tipenya. Tulis ProductUiState.Loading dan ProductUiState.Success, bukan cuma Loading.
+- Sebut nama RPC, Edge Function, tabel, kolom, dan field yang terlibat di langkah tersebut.
+
+Contoh JELEK. Generik dan kabur:
+"1. Function dijalankan di dalam viewModelScope.launch.
+2. ViewModel memanggil repository untuk menjalankan operasinya ke Supabase.
+3. Begitu berhasil, ViewModel memanggil loadProducts lagi sehingga nilai baru ditulis ke _uiState."
+
+Contoh BAGUS. Menyebut nama function, parameter, dan method:
+"1. addProduct menjalankan coroutine lewat viewModelScope.launch, lalu membungkus input pengguna menjadi objek Product berisi name, price, dan stock.
+2. addProduct memanggil repository.addProduct yang menjalankan insert objek Product tadi ke tabel product lewat Postgrest.
+3. Begitu insert berhasil, addProduct memanggil loadProducts lagi yang membaca ulang tabel product lalu menulis ProductUiState.Success berisi daftar terbaru ke _uiState."
 - Jelaskan konsep di balik mekanismenya, bukan cuma menyebut nama. Contoh hal yang wajib dijelaskan: apa itu MutableStateFlow dan kenapa dibuat private, bagaimana StateFlow read only diekspos ke layar, bagaimana collectAsStateWithLifecycle membuat composable menggambar ulang ketika state berubah, kenapa memanggil loadX lagi setelah operasi tulis bisa membuat data di layar ikut berubah, apa peran viewModelScope dan Dispatchers.IO, dan bagaimana coroutine bekerja di situ.
 - Jelaskan kenapa sebuah keputusan diambil, bukan cuma apa yang terjadi. Contoh kenapa saldo lewat RPC, kenapa field dibuat nullable, kenapa stok disaring.
 - Tetap patuh larangan gaya dan tetap mengalir. Rinci bukan berarti patah patah.
