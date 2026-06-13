@@ -51,6 +51,46 @@ class KasViewModel(private val repository: KasRepository = KasRepository()) : Vi
         }
     }
 
+    fun updateKasName(kasId: String, name: String) {
+        if (kasId.isBlank()) {
+            _uiState.value = KasUiState.Error("Kas id is missing")
+            return
+        }
+        if (name.isBlank()) {
+            _uiState.value = KasUiState.Error("Kas name is required")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                repository.updateKasName(kasId, name.trim())
+                loadKas()
+            } catch (e: Exception) {
+                _uiState.value = KasUiState.Error(e.message ?: "Failed to update kas name")
+            }
+        }
+    }
+
+    fun deleteKas(kasId: String) {
+        if (kasId.isBlank()) {
+            _uiState.value = KasUiState.Error("Kas id is missing")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                repository.deleteKas(kasId)
+                loadKas()
+            } catch (e: Exception) {
+                val message = e.message.orEmpty()
+                val friendly = if (message.contains("foreign key", true) || message.contains("violates", true) || message.contains("23503")) {
+                    "This kas can't be deleted because it has transaction history. Deactivate it instead."
+                } else {
+                    message.ifBlank { "Failed to delete kas" }
+                }
+                _uiState.value = KasUiState.Error(friendly)
+            }
+        }
+    }
+
     fun manualAdjustment(kasId: String, amount: Double, reason: String) {
         if (kasId.isBlank()) {
             _uiState.value = KasUiState.Error("Kas id is missing")

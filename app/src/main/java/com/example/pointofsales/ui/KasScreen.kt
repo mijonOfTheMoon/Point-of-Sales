@@ -149,12 +149,20 @@ fun KasScreen(
         KasAdjustSheet(
             kas = kas,
             onDismiss = { showAdjustSheet = null },
-            onConfirm = { newBalance, reason ->
-                val balanceChange = newBalance - kas.balance
-                val description = reason.ifBlank {
-                    "Balance edited from ${kas.balance.toAmountInput()} to ${newBalance.toAmountInput()}"
+            onSave = { newName, newBalance, reason ->
+                if (newName != kas.name) {
+                    viewModel.updateKasName(kas.id ?: "", newName)
                 }
-                viewModel.manualAdjustment(kas.id ?: "", balanceChange, description)
+                if (abs(newBalance - kas.balance) > 0.000001) {
+                    val description = reason.ifBlank {
+                        "Balance edited from ${kas.balance.toAmountInput()} to ${newBalance.toAmountInput()}"
+                    }
+                    viewModel.manualAdjustment(kas.id ?: "", newBalance - kas.balance, description)
+                }
+                showAdjustSheet = null
+            },
+            onDelete = {
+                viewModel.deleteKas(kas.id ?: "")
                 showAdjustSheet = null
             }
         )
@@ -218,33 +226,73 @@ fun KasItem(
 fun KasAdjustSheet(
     kas: Kas,
     onDismiss: () -> Unit,
-    onConfirm: (Double, String) -> Unit
+    onSave: (String, Double, String) -> Unit,
+    onDelete: () -> Unit
 ) {
+    var name by remember(kas.id) { mutableStateOf(kas.name) }
     var amount by remember(kas.id, kas.balance) { mutableStateOf(kas.balance.toAmountInput()) }
     var reason by remember { mutableStateOf("") }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     val cs = MaterialTheme.colorScheme
     val newBalance = amount.toDoubleOrNull()
-    val isValidBalance = newBalance != null && newBalance >= 0.0 && abs(newBalance - kas.balance) > 0.000001
+    val trimmedName = name.trim()
+    val nameChanged = trimmedName.isNotBlank() && trimmedName != kas.name
+    val balanceChanged = newBalance != null && newBalance >= 0.0 && abs(newBalance - kas.balance) > 0.000001
+    val canSave = trimmedName.isNotBlank() && newBalance != null && newBalance >= 0.0 && (nameChanged || balanceChanged)
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = cs.surface, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
             Text("Edit - ${kas.name}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Set the final balance for this kas.", style = MaterialTheme.typography.bodySmall, color = cs.onSurface.copy(alpha = 0.45f))
+            Text("Update the name or balance for this kas.", style = MaterialTheme.typography.bodySmall, color = cs.onSurface.copy(alpha = 0.45f))
             Spacer(modifier = Modifier.height(20.dp))
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Amount") }, leadingIcon = { Icon(Icons.Default.AttachMoney, null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(value = reason, onValueChange = { reason = it }, label = { Text("Reason") }, leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
             Spacer(modifier = Modifier.height(24.dp))
             Button(
-                onClick = { newBalance?.let { onConfirm(it, reason) } },
-                enabled = isValidBalance,
+                onClick = { newBalance?.let { onSave(trimmedName, it, reason) } },
+                enabled = canSave,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Save Balance", style = MaterialTheme.typography.titleSmall)
+                Text("Save Changes", style = MaterialTheme.typography.titleSmall)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = { showDeleteConfirm = true },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = cs.error)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Delete Kas", style = MaterialTheme.typography.titleSmall)
             }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Kas") },
+            text = { Text("Are you sure you want to delete \"${kas.name}\"? This action can't be undone. Kas with transaction history can't be deleted.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteConfirm = false
+                    onDelete()
+                }) {
+                    Text("Delete", color = cs.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

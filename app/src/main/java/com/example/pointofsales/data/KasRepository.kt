@@ -23,6 +23,26 @@ class KasRepository {
         )
     }
 
+    suspend fun updateKasName(kasId: String, name: String) = withContext(Dispatchers.IO) {
+        postgrest["kas"].update(
+            buildJsonObject {
+                put("name", name)
+            }
+        ) {
+            filter {
+                eq("id", kasId)
+            }
+        }
+    }
+
+    suspend fun deleteKas(kasId: String) = withContext(Dispatchers.IO) {
+        postgrest["kas"].delete {
+            filter {
+                eq("id", kasId)
+            }
+        }
+    }
+
     suspend fun manualAdjustment(kasId: String, amount: Double, reason: String) = withContext(Dispatchers.IO) {
         postgrest.rpc(
             function = "manual_kas_adjustment",
