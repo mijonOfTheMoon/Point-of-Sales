@@ -1,8 +1,0 @@
-1.2 Tujuan Pembuatan Aplikasi
-
-Tujuan pembuatan aplikasi ini adalah:
-
-1. Menyediakan aplikasi kasir mobile yang mampu mencatat transaksi penjualan secara langsung ke database Supabase.
-2. Mempermudah pemilik toko mengelola produk, stok, pelanggan, kas, sampai pengeluaran cukup dari satu aplikasi.
-3. Menerapkan arsitektur MVVM bersama Jetpack Compose supaya state UI dan logika data tetap terpisah rapi.
-4. Mengatur hak akses tiap pengguna lewat role sehingga setiap peran hanya melihat fitur yang memang relevan baginya.

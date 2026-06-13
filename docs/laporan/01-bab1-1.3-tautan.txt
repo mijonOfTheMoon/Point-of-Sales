@@ -1,5 +1,0 @@
-1.3 Tautan
-
-- Link Repository GitHub Android: -
-- Link Video Demo: -
-- Video menunjukkan demo fitur per anggota

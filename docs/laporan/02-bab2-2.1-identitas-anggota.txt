@@ -1,9 +1,0 @@
-BAB II
-PEMBAGIAN TUGAS KELOMPOK
-
-2.1 Identitas Anggota Kelompok
-
-No   Nama Mahasiswa                NIM                Peran dalam Kelompok
-1    Hasbi Mizan Azzami            235150701111025    Membuat Modul Manajemen Kas penuh dari model sampai UI, repository AuthRepository dan ViewModel AuthViewModel untuk Autentikasi, repository ProductRepository serta ViewModel ProductViewModel serta UI ProductScreen untuk Produk, repository SalesRepository serta ViewModel SalesViewModel serta model Transaction untuk Transaksi Penjualan, repository DashboardRepository serta ViewModel DashboardViewModel serta UI DashboardScreen untuk Dashboard, function updateProfile di AuthRepository dan AuthViewModel untuk Profil, dan Modul Manajemen Pengguna penuh dari model sampai UI
-2    A. Issadurrofiq Jaya Utama    235150700111023    Membuat Modul Pelanggan penuh dari model sampai UI, UI LoginScreen untuk Autentikasi, UI SalesScreen untuk Transaksi Penjualan, UI ProfileScreen untuk Profil, dan model DashboardSummary untuk Dashboard
-3    A. Wildan Hula Aufa           235150700111013    Membuat Modul Pengeluaran penuh dari model sampai UI, UI RegisterScreen untuk Autentikasi, UI TransactionHistoryScreen untuk Transaksi Penjualan, komponen UI EditProfileSheet untuk Profil, dan model Product untuk Produk

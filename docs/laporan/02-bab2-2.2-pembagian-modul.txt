@@ -1,6 +1,0 @@
-2.2 Pembagian Modul Individu
-
-No   Nama Anggota                  Modul yang Dikerjakan   Tugas Utama
-1    Hasbi Mizan Azzami            Modul Manajemen Kas     Membuat model, repository, ViewModel, dan UI kas
-2    A. Issadurrofiq Jaya Utama    Modul Pelanggan         Membuat model, repository, ViewModel, dan UI pelanggan
-3    A. Wildan Hula Aufa           Modul Pengeluaran       Membuat model, repository, ViewModel, dan UI pengeluaran
