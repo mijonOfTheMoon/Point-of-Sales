@@ -1,21 +1,54 @@
-3.2 Daftar File Utama Aplikasi
+3.2 List File Utama Aplikasi
 
-No   Nama Folder/File                Fungsi
-1    MainActivity.kt                 Activity utama yang memanggil AppNavigation di dalam theme aplikasi
+No   Nama File                       Fungsi
+1    MainActivity.kt                 Activity utama yang memuat AppNavigation di dalam theme aplikasi
+
 2    navigation/Screen.kt            Mendefinisikan seluruh tujuan navigasi sebagai sealed interface NavKey
 3    navigation/AppNavigation.kt     Mengatur back stack dan menentukan layar awal berdasarkan status sesi
+
 4    data/SupabaseClientProvider.kt  Membangun SupabaseClient beserta plugin Auth dan Postgrest
-5    data/AuthRepository.kt          Menangani signUp, signIn, signOut, dan pembacaan profil sesi
-6    data/KasRepository.kt           Mengambil dan menyesuaikan saldo kas lewat RPC
-7    data/CustomerRepository.kt      Menangani CRUD pelanggan lewat RPC
-8    data/ExpenseRepository.kt       Mencatat dan membatalkan pengeluaran lewat RPC
-9    data/ProductRepository.kt       Menangani CRUD produk lewat select, insert, update, dan RPC
+5    data/AuthRepository.kt          Menangani signUp, signIn, signOut, baca profil sesi, dan updateProfile lewat Supabase Auth
+6    data/KasRepository.kt           Mengambil list kas dan menyesuaikan saldo lewat RPC manual_kas_adjustment, activate_kas, dan deactivate_kas
+7    data/CustomerRepository.kt      CRUD pelanggan lewat RPC register_customer, update_customer_profile, activate_customer, dan deactivate_customer
+8    data/ExpenseRepository.kt       Mencatat dan membatalkan pengeluaran lewat RPC create_expense dan cancel_expense
+9    data/ProductRepository.kt       CRUD produk lewat select, insert, update, dan RPC deactivate_product
 10   data/SalesRepository.kt         Mengambil transaksi dan memproses penjualan lewat RPC process_sale
-11   data/DashboardRepository.kt     Mengambil ringkasan dashboard lewat RPC get_dashboard_summary
-12   data/UserRepository.kt          Mengelola akun pengguna lewat Edge Function admin-users
-13   model/                          Berisi data class seperti Kas, Customer, Expense, Product, dan Transaction
-14   viewmodel/                      Berisi ViewModel beserta UiState tiap fitur
-15   viewmodel/AuthState.kt          Mendefinisikan AuthUiState dan AuthCheckState
-16   ui/                             Berisi seluruh layar Compose tiap fitur
-17   ui/SharedComponents.kt          Menyimpan komponen bersama seperti SearchSortBar dan rupiahFormatter
-18   ui/theme/                       Menyimpan Color, Theme, dan Type aplikasi
+11   data/DashboardRepository.kt     Mengambil ringkasan lewat RPC get_dashboard_summary
+12   data/UserRepository.kt          Mengelola akun pengguna lewat Edge Function admin-users dengan HttpURLConnection
+
+13   model/Kas.kt                    Model data kas
+14   model/Customer.kt               Model data pelanggan
+15   model/Expense.kt                Model data pengeluaran beserta property turunan is_cancelled
+16   model/Product.kt                Model data produk
+17   model/Transaction.kt           Model transaksi beserta TransactionWithItems dan detail itemnya
+18   model/TransactionItem.kt        Model TransactionItemInput untuk item yang dikirim saat penjualan
+19   model/DashboardSummary.kt       Model ringkasan dashboard
+20   model/AdminUser.kt              Model akun pengguna hasil Edge Function
+21   model/UserProfile.kt            Model profil sesi yang dibaca dari tabel profiles
+
+22   viewmodel/AuthState.kt          Mendefinisikan AuthUiState dan AuthCheckState
+23   viewmodel/AuthViewModel.kt      Menyimpan state autentikasi lalu menjalankan signIn, signUp, signOut, dan updateProfile
+24   viewmodel/KasViewModel.kt       Menyimpan list kas di state lalu menjalankan penyesuaian saldo dan aktivasi
+25   viewmodel/CustomerViewModel.kt  Menyimpan list pelanggan di state lalu menjalankan tambah, ubah, dan aktivasi
+26   viewmodel/ExpenseViewModel.kt   Menyimpan list pengeluaran di state lalu menjalankan pencatatan dan pembatalan
+27   viewmodel/ProductViewModel.kt   Menyimpan list produk di state lalu menjalankan tambah, ubah, dan hapus
+28   viewmodel/SalesViewModel.kt     Menyimpan keranjang, list produk, dan riwayat transaksi, lalu menjalankan checkout penjualan
+29   viewmodel/DashboardViewModel.kt Menyimpan ringkasan dashboard di state lalu memuatnya sesuai role
+30   viewmodel/UserViewModel.kt      Menyimpan list akun pengguna di state lalu menjalankan tambah, ubah, dan hapus
+
+31   ui/LoginScreen.kt               Tampilan halaman login
+32   ui/RegisterScreen.kt            Tampilan halaman register
+33   ui/DashboardScreen.kt           Tampilan ringkasan dan menu navigasi
+34   ui/KasScreen.kt                 Tampilan list dan form penyesuaian kas
+35   ui/CustomerScreen.kt            Tampilan list dan form pelanggan
+36   ui/ExpenseScreen.kt             Tampilan list dan form pengeluaran
+37   ui/ProductScreen.kt             Tampilan list dan form produk
+38   ui/SalesScreen.kt               Tampilan kasir dan checkout
+39   ui/TransactionHistoryScreen.kt  Tampilan riwayat transaksi
+40   ui/ProfileScreen.kt             Tampilan profil dan form ubah profil beserta EditProfileSheet
+41   ui/UserManagementScreen.kt      Tampilan list dan form pengguna
+42   ui/SharedComponents.kt          Komponen bersama seperti SearchSortBar dan rupiahFormatter
+
+43   ui/theme/Color.kt               Definisi warna aplikasi
+44   ui/theme/Theme.kt               Definisi theme aplikasi
+45   ui/theme/Type.kt                Definisi tipografi aplikasi

@@ -36,6 +36,21 @@ class KasViewModel(private val repository: KasRepository = KasRepository()) : Vi
         }
     }
 
+    fun createKas(name: String, initialBalance: Double) {
+        if (name.isBlank()) {
+            _uiState.value = KasUiState.Error("Kas name is required")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                repository.createKas(name.trim(), initialBalance)
+                loadKas()
+            } catch (e: Exception) {
+                _uiState.value = KasUiState.Error(e.message ?: "Failed to create kas")
+            }
+        }
+    }
+
     fun manualAdjustment(kasId: String, amount: Double, reason: String) {
         if (kasId.isBlank()) {
             _uiState.value = KasUiState.Error("Kas id is missing")

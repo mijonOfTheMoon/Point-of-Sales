@@ -14,6 +14,15 @@ class KasRepository {
         postgrest["kas"].select().decodeList<Kas>()
     }
 
+    suspend fun createKas(name: String, initialBalance: Double) = withContext(Dispatchers.IO) {
+        postgrest["kas"].insert(
+            buildJsonObject {
+                put("name", name)
+                put("balance", initialBalance)
+            }
+        )
+    }
+
     suspend fun manualAdjustment(kasId: String, amount: Double, reason: String) = withContext(Dispatchers.IO) {
         postgrest.rpc(
             function = "manual_kas_adjustment",

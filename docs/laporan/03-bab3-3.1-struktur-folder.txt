@@ -3,7 +3,7 @@ STRUKTUR APLIKASI
 
 3.1 Struktur Folder Aplikasi
 
-Seluruh kode sumber aplikasi berada di bawah package com.example.pointofsales, lalu dibagi per layer supaya rapi mengikuti pola MVVM. Folder model dipakai untuk menampung seluruh data class yang menjadi bentuk data aplikasi. Folder data berisi repository beserta SupabaseClientProvider yang menjadi pintu masuk ke Supabase. Lapisan logika dan state ditaruh di folder viewmodel, lalu seluruh tampilannya akan tinggal di folder ui bersama komponen bersama dan theme. Perpindahan antar layar sendiri diatur lewat folder navigation, dan semuanya bermuara ke MainActivity.kt yang menjadi entry point lalu memuat AppNavigation.
+Seluruh kode sumber aplikasi berada di bawah package com.example.pointofsales, lalu dibagi per layer mengikuti pola MVVM. Folder model menampung seluruh data class yang menjadi bentuk data aplikasi. Folder data berisi repository dari tiap fitur, ditambah satu SupabaseClientProvider sebagai penyedia koneksi ke Supabase, lalu folder viewmodel memegang logika dan state tiap fitur. Seluruh tampilan Compose tinggal di folder ui bersama komponen bersama dan subfolder theme. Perpindahan antar layar diatur di folder navigation, dan semuanya bermuara ke MainActivity.kt yang menjadi entry point lalu memuat AppNavigation.
 
 app/
 └── java/com/example/pointofsales/

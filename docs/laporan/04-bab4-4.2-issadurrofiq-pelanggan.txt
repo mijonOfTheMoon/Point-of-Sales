@@ -9,7 +9,7 @@ Nama Modul: Pelanggan
 Fitur ini digunakan untuk mengelola data pelanggan toko yang nantinya bisa ditautkan ke sebuah transaksi penjualan. Tiap pelanggan akan menyimpan nama, nomor telepon, serta status aktif. Sama seperti modul kas, pencatatan dan perubahan datanya tidak dilakukan lewat insert atau update tabel biasa, melainkan lewat RPC supaya aturannya tetap dipegang oleh database.
 
 Fitur yang dikerjakan meliputi:
-1. Menampilkan daftar pelanggan beserta jumlah total dan jumlah yang masih aktif
+1. Menampilkan list pelanggan beserta jumlah total dan jumlah yang masih aktif
 2. Mendaftarkan pelanggan baru lewat sebuah bottom sheet
 3. Mengubah nama dan nomor telepon pelanggan
 4. Mengaktifkan dan menonaktifkan pelanggan
@@ -20,8 +20,8 @@ Fitur yang dikerjakan meliputi:
 No   Nama File                Fungsi File
 1    Customer.kt              Model data pelanggan
 2    CustomerRepository.kt    Mengakses dan mengubah data pelanggan ke Supabase
-3    CustomerViewModel.kt     Mengatur state dan proses data pelanggan
-4    CustomerScreen.kt        Menampilkan halaman daftar dan form pelanggan
+3    CustomerViewModel.kt     Menyimpan list pelanggan di state lalu menjalankan tambah, ubah, dan aktivasi
+4    CustomerScreen.kt        Menampilkan halaman list dan form pelanggan
 
 4.2.4 Kode Model
 
@@ -119,14 +119,14 @@ class CustomerViewModel(private val repository: CustomerRepository = CustomerRep
 
 4.2.9 Penjelasan Penerapan ViewModel
 
-Bentuk tampilan layar diwakili sealed interface CustomerUiState yang punya tiga turunan yaitu Loading, Success, dan Error. Pemilihan sealed interface di sini membuat layar bisa memakai when secara aman, karena seluruh kemungkinan state sudah pasti tertangani. State Success membawa daftar customers, lalu Error membawa pesannya, sehingga datanya menempel langsung ke state-nya.
+Bentuk tampilan layar diwakili sealed interface CustomerUiState yang punya tiga turunan yaitu Loading, Success, dan Error. Pemilihan sealed interface di sini membuat layar bisa memakai when secara aman, karena seluruh kemungkinan state sudah pasti tertangani. State Success membawa list customers, lalu Error membawa pesannya, sehingga datanya menempel langsung ke state-nya.
 
 State tersebut disimpan di dalam _uiState yang bertipe MutableStateFlow. MutableStateFlow merupakan wadah satu nilai yang bisa diamati, jadi begitu nilainya diganti, seluruh pengamatnya langsung diberi tahu. Variabel _uiState dibuat private supaya hanya ViewModel yang boleh mengubahnya, lalu ke luar ViewModel hanya mengekspos uiState lewat asStateFlow yang read only. Dengan begitu layar bisa mengamati state tetapi tidak bisa mengubahnya, dan sumber perubahan state tetap terpusat di ViewModel.
 
-Begitu ViewModel dibuat, blok init langsung memanggil loadCustomers, jadi daftar pelanggan sudah mulai diambil tanpa menunggu aksi pengguna. Tiap operasi tulis di sini mengikuti pola yang sama, dan registerCustomer bisa dijadikan contoh. Alurnya kurang lebih seperti berikut:
+Begitu ViewModel dibuat, blok init langsung memanggil loadCustomers, jadi list pelanggan sudah mulai diambil tanpa menunggu aksi pengguna. Tiap operasi tulis di sini mengikuti pola yang sama, dan registerCustomer bisa dijadikan contoh. Alurnya kurang lebih seperti berikut:
 1. registerCustomer menjalankan coroutine lewat viewModelScope.launch, yaitu coroutine scope yang umurnya mengikuti ViewModel sehingga aman dari kebocoran.
 2. registerCustomer memanggil repository.registerCustomer dengan name dan phone, yang lalu mengirim p_name dan p_phone ke RPC register_customer.
-3. Bila pendaftaran berhasil, registerCustomer memanggil loadCustomers yang menjalankan repository.getCustomers lalu menulis CustomerUiState.Success berisi daftar terbaru ke _uiState.
+3. Bila pendaftaran berhasil, registerCustomer memanggil loadCustomers yang menjalankan repository.getCustomers lalu menulis CustomerUiState.Success berisi list terbaru ke _uiState.
 4. Bila gagal, registerCustomer menangkap exception-nya lalu mengisi _uiState dengan CustomerUiState.Error berisi pesannya.
 
 Pemanggilan loadCustomers di akhir itulah yang membuat layar selalu menampilkan data terbaru. loadCustomers akan membaca ulang tabel customer lalu menulis nilai baru ke _uiState, dan karena _uiState bersifat observable, perubahan nilai ini akan mendorong layar menggambar ulang daftarnya tanpa pengguna perlu menyegarkan secara manual.
@@ -170,13 +170,13 @@ Selain state dari ViewModel, layar memegang dua state lokal yang mengatur muncul
 Kedua state lokal itulah yang mengarahkan alur form, dan urutannya seperti berikut:
 1. Ketika showAddSheet bernilai true, CustomerSheet muncul dalam keadaan kosong, lalu tombol konfirmasinya memanggil registerCustomer di ViewModel.
 2. Ketika pengguna menekan ikon edit pada salah satu baris, customerToEdit terisi pelanggan tersebut sehingga CustomerSheet muncul lagi dengan data yang sudah terisi, dan tombol konfirmasinya memanggil updateCustomer dengan membawa id pelanggan yang dibuka.
-3. Setelah pendaftaran maupun perubahan berhasil, ViewModel memuat ulang datanya sehingga daftar di layar langsung menyesuaikan tanpa perlu disegarkan manual.
+3. Setelah pendaftaran maupun perubahan berhasil, ViewModel memuat ulang datanya sehingga list di layar langsung menyesuaikan tanpa perlu disegarkan manual.
 
-Daftar pelanggannya sendiri digambar lewat LazyColumn yang tiap barisnya memakai composable CustomerItem berisi tombol edit dan Switch status.
+List pelanggannya sendiri digambar lewat LazyColumn yang tiap barisnya memakai composable CustomerItem berisi tombol edit dan Switch status.
 
 4.2.12 Screenshot Hasil
 
 No   Tampilan                     Screenshot
-1    Halaman Daftar Pelanggan     -
+1    Halaman List Pelanggan     -
 2    Form Tambah Pelanggan        -
 3    Data Pelanggan di Supabase   -

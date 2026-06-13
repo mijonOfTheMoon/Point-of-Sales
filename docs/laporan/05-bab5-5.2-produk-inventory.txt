@@ -15,8 +15,8 @@ No   Nama Anggota                  Kontribusi
 No   Nama File               Fungsi File
 1    Product.kt              Model data produk
 2    ProductRepository.kt    Mengakses dan mengubah data produk ke Supabase
-3    ProductViewModel.kt     Mengatur state dan proses data produk
-4    ProductScreen.kt        Tampilan daftar dan form produk
+3    ProductViewModel.kt     Menyimpan list produk di state lalu menjalankan tambah, ubah, dan hapus
+4    ProductScreen.kt        Tampilan list dan form produk
 
 5.2.4 Kode ViewModel Produk
 
@@ -62,13 +62,20 @@ class ProductViewModel(private val repository: ProductRepository = ProductReposi
 
 5.2.5 Penjelasan Penerapan ViewModel Produk
 
-ProductViewModel menyimpan state daftar produk lewat _uiState yang bertipe MutableStateFlow. Seperti ViewModel lain, _uiState dibuat private supaya hanya ViewModel yang bisa mengubahnya, lalu ke luar hanya uiState yang diekspos lewat asStateFlow yang read only. Begitu ViewModel dibuat, blok init langsung memanggil loadProducts supaya daftar produk segera diambil tanpa menunggu aksi pengguna.
+ProductViewModel menyimpan state list produk lewat _uiState yang bertipe MutableStateFlow. Seperti ViewModel lain, _uiState dibuat private supaya hanya ViewModel yang bisa mengubahnya, lalu ke luar hanya uiState yang diekspos lewat asStateFlow yang read only. Begitu ViewModel dibuat, blok init langsung memanggil loadProducts supaya list produk segera diambil tanpa menunggu aksi pengguna.
 
 Ada satu hal yang membedakan modul ini, yaitu penyaringan di dalam loadProducts. Setelah mengambil produk dari repository, ViewModel tidak langsung menampilkan semuanya. Ia memakai filter dengan syarat is_active, sehingga hanya produk yang masih aktif yang disimpan ke dalam state Success. Keputusan ini diambil karena penonaktifan produk di aplikasi ini bersifat soft delete. Produk yang dihapus sebenarnya hanya ditandai tidak aktif di database, bukan dibuang, jadi penyaringan di sisi ViewModel inilah yang memastikan produk nonaktif tidak ikut muncul di layar.
 
 Di sinilah terlihat perbedaan modul produk dari modul kas dan pengeluaran. Penambahan dan pengubahan produk di repository memakai insert serta update tabel secara langsung, bukan lewat RPC, karena operasinya memang sederhana dan tidak menyentuh perhitungan saldo. Hanya penonaktifannya yang lewat RPC deactivate_product supaya penandaan soft delete-nya terjaga di sisi database. Dengan addProduct sebagai contoh, alur penambahan produk berjalan seperti berikut:
 1. addProduct menjalankan coroutine lewat viewModelScope.launch, lalu membungkus name, price, dan stock dari input pengguna menjadi sebuah objek Product.
 2. addProduct memanggil repository.addProduct yang menjalankan insert objek Product tadi ke tabel product lewat Postgrest.
-3. Begitu insert berhasil, addProduct memanggil loadProducts yang membaca ulang tabel product lewat repository.getProducts, menyaring hasilnya dengan filter is_active, lalu menulis ProductUiState.Success berisi daftar terbaru ke _uiState.
+3. Begitu insert berhasil, addProduct memanggil loadProducts yang membaca ulang tabel product lewat repository.getProducts, menyaring hasilnya dengan filter is_active, lalu menulis ProductUiState.Success berisi list terbaru ke _uiState.
 
 Karena _uiState bersifat observable, perubahan nilai pada langkah terakhir membuat ProductScreen yang mengamatinya lewat collectAsStateWithLifecycle langsung menggambar ulang daftarnya dengan data terbaru.
+
+5.2.6 Screenshot Hasil
+
+No   Tampilan                  Screenshot
+1    Halaman List Produk     -
+2    Form Tambah Produk        -
+3    Data Produk di Supabase   -

@@ -34,6 +34,7 @@ fun KasScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAdjustSheet by remember { mutableStateOf<Kas?>(null) }
+    var showAddSheet by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("A-Z") }
     val cs = MaterialTheme.colorScheme
@@ -41,7 +42,17 @@ fun KasScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets(0)
+        contentWindowInsets = WindowInsets(0),
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddSheet = true },
+                containerColor = cs.primary,
+                contentColor = cs.onPrimary,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Kas")
+            }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -119,6 +130,18 @@ fun KasScreen(
                     }
                 }
             }
+        }
+    }
+
+    showAddSheet.let { show ->
+        if (show) {
+            KasAddSheet(
+                onDismiss = { showAddSheet = false },
+                onConfirm = { name, initialBalance ->
+                    viewModel.createKas(name, initialBalance)
+                    showAddSheet = false
+                }
+            )
         }
     }
 
@@ -220,6 +243,40 @@ fun KasAdjustSheet(
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Text("Save Balance", style = MaterialTheme.typography.titleSmall)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun KasAddSheet(
+    onDismiss: () -> Unit,
+    onConfirm: (String, Double) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+    val cs = MaterialTheme.colorScheme
+    val initialBalance = amount.toDoubleOrNull() ?: 0.0
+    val isValid = name.isNotBlank() && initialBalance >= 0.0
+
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = cs.surface, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+            Text("Add Kas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = cs.primary)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Create a new kas account.", style = MaterialTheme.typography.bodySmall, color = cs.onSurface.copy(alpha = 0.45f))
+            Spacer(modifier = Modifier.height(20.dp))
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, null) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("Initial Balance") }, leadingIcon = { Icon(Icons.Default.AttachMoney, null) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), singleLine = true)
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = { onConfirm(name.trim(), initialBalance) },
+                enabled = isValid,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Create Kas", style = MaterialTheme.typography.titleSmall)
             }
         }
     }

@@ -18,7 +18,7 @@ No   Nama Anggota                  Kontribusi
 
 No   Nama File            Fungsi File
 1    AuthRepository.kt    Menghubungkan login dan register dengan Supabase Auth
-2    AuthViewModel.kt     Mengatur state login, register, dan status sesi
+2    AuthViewModel.kt     Menyimpan state login dan register beserta status sesi
 3    AuthState.kt         Mendefinisikan AuthUiState dan AuthCheckState
 4    LoginScreen.kt       Tampilan halaman login
 5    RegisterScreen.kt    Tampilan halaman register
@@ -82,3 +82,10 @@ Alur saat pengguna menekan tombol sign in bisa diurutkan seperti berikut:
 5. Bila gagal, signIn menangkap exception-nya lalu mengisi _uiState dengan AuthUiState.Error berisi pesannya.
 
 Di sisi layar, LoginScreen mengambil uiState lewat collectAsStateWithLifecycle. Begitu uiState berubah menjadi Loading, tombol sign in berganti menjadi indikator memuat. Begitu uiState menjadi Success, layar menandai login berhasil lalu memanggil resetUiState supaya status proses kembali ke Idle. RegisterScreen bekerja dengan pola serupa lewat signUp, hanya saja setelah berhasil ia memberi jeda singkat lalu mengarahkan pengguna kembali ke halaman login.
+
+5.1.6 Screenshot Hasil
+
+No   Tampilan                   Screenshot
+1    Halaman Login              -
+2    Halaman Register           -
+3    Data Pengguna di Supabase  -

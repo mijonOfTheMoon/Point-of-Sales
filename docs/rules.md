@@ -28,7 +28,7 @@ Peta kontribusi BAB V yang dikunci:
 - 5.2 Produk dan Inventory, dua orang. Hasbi membuat ProductRepository, ProductViewModel, dan ProductScreen. Wildan membuat model Product.
 - 5.3 Transaksi Penjualan, tiga orang. Hasbi membuat SalesRepository, SalesViewModel, dan model Transaction. Issadurrofiq membuat SalesScreen. Wildan membuat TransactionHistoryScreen.
 - 5.4 Dashboard, dua orang. Hasbi membuat DashboardRepository, DashboardViewModel, dan DashboardScreen. Issadurrofiq membuat model DashboardSummary.
-- 5.5 Profil Pengguna, dua orang. Hasbi membuat logika updateProfile di AuthRepository dan AuthViewModel. Issadurrofiq membuat ProfileScreen.
+- 5.5 Profil Pengguna, tiga orang. Hasbi membuat logika updateProfile di AuthRepository dan AuthViewModel. Issadurrofiq membuat ProfileScreen. Wildan membuat EditProfileSheet di dalam ProfileScreen.kt.
 - 5.6 Manajemen Pengguna, satu orang. Hasbi membuat model AdminUser, UserRepository, UserViewModel, dan UserManagementScreen sendiri.
 
 Penyesuaian tabel 2.3 mengikuti peta di atas. Kolom anggota terlibat tidak selalu ditulis Semua anggota. Untuk fitur dua orang ditulis nama yang terlibat. Untuk Manajemen Pengguna ditulis Hasbi saja.

@@ -9,6 +9,7 @@ Fitur profil digunakan supaya tiap pengguna bisa melihat dan mengubah data akunn
 No   Nama Anggota                  Kontribusi
 1    Hasbi Mizan Azzami            Menambahkan logika updateProfile di AuthRepository dan AuthViewModel
 2    A. Issadurrofiq Jaya Utama    Membuat ProfileScreen
+3    A. Wildan Hula Aufa           Membuat EditProfileSheet di dalam ProfileScreen.kt
 
 5.5.3 File yang Digunakan
 
@@ -44,6 +45,15 @@ Pembaruan profil ditangani updateProfile pada AuthViewModel, dan function ini me
 4. Setelah itu updateProfile mengisi _uiState dengan AuthUiState.Success supaya ProfileScreen bisa menampilkan pesan berhasil lewat snackbar.
 5. Bila gagal, updateProfile menangkap exception-nya lalu mengisi _uiState dengan AuthUiState.Error berisi pesannya.
 
+Form pengubahannya sendiri dipisah ke dalam EditProfileSheet, yaitu sebuah ModalBottomSheet yang menampung field name, email, dan password baru. Begitu pengguna menekan simpan, EditProfileSheet membandingkan tiap field dengan nilai lamanya lalu hanya meneruskan field yang benar benar berubah ke updateProfile. Field yang dibiarkan kosong sengaja diabaikan supaya nilai lama tidak ikut tertimpa, dan dari sinilah ketiga parameter nullable tadi terisi.
+
 Ada satu hal penting yang terjadi di balik layar saat password ikut diganti. Pembaruan profil sebenarnya dijalankan lewat UserRepository yang memanggil Edge Function admin-users dengan action self_update. Begitu password berubah, Supabase akan menganggap kredensialnya berubah lalu membatalkan token sesi yang lama. Tanpa penanganan khusus, pengguna akan langsung terlempar keluar tepat setelah menyimpan. Untuk mencegahnya, AuthRepository akan otomatis menjalankan sign in ulang memakai kredensial baru begitu password diganti, sehingga sesinya tetap hidup dan pengguna tidak perlu login lagi.
 
 Bagian applyCurrentUserSnapshot juga punya peran penting. Function itu langsung mengisi checkState menjadi Authenticated memakai data pengguna dari response server. Dengan begitu nama atau email terbaru bisa langsung tampil tanpa perlu membaca ulang database. Karena checkState bersifat observable, ProfileScreen yang mengamatinya lewat collectAsStateWithLifecycle akan otomatis menggambar ulang bagian identitas dengan data yang sudah diperbarui. ProfileScreen sendiri menampung perubahan ini lewat sebuah snackbar yang muncul begitu uiState menjadi Success atau Error.
+
+5.5.6 Screenshot Hasil
+
+No   Tampilan                  Screenshot
+1    Halaman Profil            -
+2    Form Edit Profil          -
+3    Data Profil di Supabase   -

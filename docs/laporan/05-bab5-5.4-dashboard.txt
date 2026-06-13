@@ -15,7 +15,7 @@ No   Nama Anggota                  Kontribusi
 No   Nama File                 Fungsi File
 1    DashboardSummary.kt       Model ringkasan dashboard
 2    DashboardRepository.kt    Mengambil ringkasan lewat RPC get_dashboard_summary
-3    DashboardViewModel.kt     Mengatur state ringkasan dashboard
+3    DashboardViewModel.kt     Menyimpan ringkasan dashboard di state lalu memuatnya sesuai role
 4    DashboardScreen.kt        Tampilan ringkasan dan menu navigasi
 
 5.4.4 Kode ViewModel Dashboard
@@ -54,3 +54,10 @@ Pemuatan baru terjadi ketika layar memanggil loadSummary. Alurnya bisa diurutkan
 4. Bila gagal, loadSummary menangkap exception-nya lalu mengisi _uiState dengan DashboardUiState.Error berisi pesannya.
 
 Keputusan memanggil loadSummary diatur di DashboardScreen dan memang dibuat sadar role. Pemanggilannya hanya dilakukan ketika role pengguna termasuk admin atau supervisor, karena hanya peran itu yang berhak melihat ringkasan keuangan toko. Untuk role lain seperti cashier dan stocker, ViewModel justru memanggil clearSummary supaya state-nya kembali ke Idle dan angka keuangan tidak ikut ditampilkan. Model DashboardSummary sendiri menyimpan field seperti total_sales_value dan total_active_kas_balance, dan beberapa di antaranya memakai SerialName supaya nama property di Kotlin bisa lebih ringkas daripada nama kolom hasil RPC. Karena _uiState bersifat observable, begitu nilainya berganti menjadi Success, DashboardScreen yang mengamatinya lewat collectAsStateWithLifecycle akan langsung menggambar ulang kartu kartu ringkasannya.
+
+5.4.6 Screenshot Hasil
+
+No   Tampilan                       Screenshot
+1    Dashboard Admin                -
+2    Dashboard Cashier              -
+3    Data Ringkasan di Supabase     -
